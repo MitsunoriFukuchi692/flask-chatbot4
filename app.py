@@ -1,11 +1,13 @@
 from flask import Flask, request, jsonify
 import openai
 from flask_cors import CORS
+import os
 
 app = Flask(__name__)
-CORS(app)
+CORS(app, origins="https://robostudy.jp")  # 必要に応じて ["https://robostudy.jp"] に変更可能
 
-openai.api_key = "sk-あなたのOpenAIキー"
+# セキュアな環境変数からAPIキーを取得
+openai.api_key = os.environ.get("OPENAI_API_KEY")
 
 @app.route("/chat", methods=["POST"])
 def chat():
