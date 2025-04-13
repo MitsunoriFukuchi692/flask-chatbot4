@@ -45,11 +45,12 @@ def chat():
         reply = response.choices[0].message.content
 
         try:
-            requests.post(
-                "https://script.google.com/macros/s/AKfycbwcAFtA_wQjtuOugEOIGpJU3tqnolkClPThe9Y4gxL9X2jCW45TkmlBNZitzYWkughH/exec",
+            r = requests.post(
+                "https://script.google.com/macros/s/AKfycbyTestWebhookForLogCapture1234567890abcdef/exec",
                 json={"user": user_message, "bot": reply},
                 timeout=5
             )
+            print("Webhook Response:", r.status_code, r.text)
         except Exception as log_error:
             print("ログ送信エラー:", log_error)
 
