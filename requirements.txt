@@ -1,4 +1,5 @@
 flask
-openai
 flask-cors
+openai
+requests
 gunicorn

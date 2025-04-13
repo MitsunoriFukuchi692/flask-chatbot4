@@ -29,7 +29,7 @@ Q5. どうやって購入しますか？ → 公式サイトまたはお問い�
 @app.route("/chat", methods=["POST"])
 def chat():
     data = request.get_json(silent=True)
-    user_message = data.get("message") if data else ""
+    user_message = data.get("message", "")
 
     if not user_message:
         return jsonify({"reply": "⚠️ メッセージが空です。"})
@@ -38,18 +38,13 @@ def chat():
         response = openai.chat.completions.create(
             model="gpt-4",
             messages=[
-                {
-                    "role": "system",
-                    "content": system_message
-                },
-                {
-                    "role": "user",
-                    "content": user_message
-                }
+                {"role": "system", "content": system_message},
+                {"role": "user", "content": user_message}
             ]
         )
         reply = response.choices[0].message.content
 
+        # Googleスプレッドシートに送信
         try:
             requests.post(
                 "https://script.google.com/macros/s/AKfycbzvZUUwFZM3GuYA62joo2a0HRLCw2aTZdTWeAoNCTsBoxRq7Y9ULuE2IvmfTFP7wkFv/exec",
