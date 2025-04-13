@@ -5,9 +5,9 @@ from flask_cors import CORS
 import os
 
 app = Flask(__name__)
-CORS(app, origins=["https://robostudy.jp"])  # 本番ドメイン限定
+CORS(app, origins=["https://robostudy.jp"])
 
-# OpenAI APIキー（環境変数）
+# OpenAI APIキー（環境変数から取得）
 openai.api_key = os.environ.get("OPENAI_API_KEY")
 
 @app.route("/chat", methods=["POST"])
@@ -19,10 +19,21 @@ def chat():
         return jsonify({"reply": "⚠️ メッセージが空です。"})
 
     try:
-        # 新しいAPI書き方（openai>=1.0.0）
+        # OpenAI v1.0+ 形式の API 呼び出し
         response = openai.chat.completions.create(
             model="gpt-4",
-            messages=[{"role": "user", "content": user_message}]
+            messages=[
+                {
+                    "role": "system",
+                    "content": """あなたはロボ・スタディ株式会社の公式チャットボットです。以下の情報を参考に、正確に応答してください：
+
+"""
+                },
+                {
+                    "role": "user",
+                    "content": user_message
+                }
+            ]
         )
         reply = response.choices[0].message.content
         return jsonify({"reply": reply})
