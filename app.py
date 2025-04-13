@@ -1,4 +1,3 @@
-
 from flask import Flask, request, jsonify
 import openai
 from flask_cors import CORS
@@ -7,7 +6,6 @@ import os
 app = Flask(__name__)
 CORS(app, origins=["https://robostudy.jp"])
 
-# OpenAI APIキー（環境変数から取得）
 openai.api_key = os.environ.get("OPENAI_API_KEY")
 
 @app.route("/chat", methods=["POST"])
@@ -19,14 +17,18 @@ def chat():
         return jsonify({"reply": "⚠️ メッセージが空です。"})
 
     try:
-        # OpenAI v1.0+ 形式の API 呼び出し
         response = openai.chat.completions.create(
             model="gpt-4",
             messages=[
                 {
                     "role": "system",
-                    "content": """あなたはロボ・スタディ株式会社の公式チャットボットです。以下の情報を参考に、正確に応答してください：
+                    "content": """AI・みまくんは、人々の孤独を防ぐために作られた、小型で可愛い、見守り対話ロボットです。高齢者の心の支えとなることを目的に開発され、ChatGPTと連携して自由な会話が可能です。Wi-Fiに接続して自動アップデートされます。
 
+Q1. AI・みまくんの価格は？ → 税込198,000円です。月額サブスクプランもあります。
+Q2. どんな会話ができますか？ → ChatGPTと連携して自由な日常会話が可能です。
+Q3. 高齢者向けの工夫は？ → 声が大きく、言葉をゆっくり話します。
+Q4. 自動アップデートはありますか？ → Wi-Fi経由で自動バージョンアップします。
+Q5. どうやって購入しますか？ → 公式サイトまたはお問い合わせからご案内します。
 """
                 },
                 {
