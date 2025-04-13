@@ -44,10 +44,9 @@ def chat():
         )
         reply = response.choices[0].message.content
 
-        # Googleスプレッドシートに送信
         try:
             requests.post(
-                "https://script.google.com/macros/s/AKfycbzvZUUwFZM3GuYA62joo2a0HRLCw2aTZdTWeAoNCTsBoxRq7Y9ULuE2IvmfTFP7wkFv/exec",
+                "https://script.google.com/macros/s/AKfycbwcAFtA_wQjtuOugEOIGpJU3tqnolkClPThe9Y4gxL9X2jCW45TkmlBNZitzYWkughH/exec",
                 json={"user": user_message, "bot": reply},
                 timeout=5
             )
