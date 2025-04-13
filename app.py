@@ -3,6 +3,7 @@ from flask import Flask, request, jsonify
 import openai
 from flask_cors import CORS
 import os
+import requests
 
 app = Flask(__name__)
 CORS(app, origins=["https://robostudy.jp"])
@@ -49,9 +50,14 @@ def chat():
         )
         reply = response.choices[0].message.content
 
-        # ログ保存
-        with open("chat_logs.txt", "a", encoding="utf-8") as log_file:
-            log_file.write(f"User: {user_message}\nBot: {reply}\n\n")
+        try:
+            requests.post(
+                "https://script.google.com/macros/s/AKfycbzvZUUwFZM3GuYA62joo2a0HRLCw2aTZdTWeAoNCTsBoxRq7Y9ULuE2IvmfTFP7wkFv/exec",
+                json={"user": user_message, "bot": reply},
+                timeout=5
+            )
+        except Exception as log_error:
+            print("ログ送信エラー:", log_error)
 
         return jsonify({"reply": reply})
     except Exception as e:
