@@ -11,7 +11,7 @@ CORS(app, origins=["https://robostudy.jp"])
 openai.api_key = os.environ.get("OPENAI_API_KEY")
 
 SUPABASE_URL = "https://uvseetukwotbmyqdfcaj.supabase.co"
-SUPABASE_API_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV2c2VldHVrd290Ym15cWRmY2FqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTMwNzEzNDcsImV4cCI6MjAyODY0NzM0N30.9ALYMEaJWn51LuJ1byB3A8ADrTXMNBbHUqJXZ8o8xnQ"
+SUPABASE_API_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV2c2VldHVrd290Ym15cWRmY2FqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQ1OTg3MzQsImV4cCI6MjA2MDE3NDczNH0.Jow9WA376Mo4xDYuyHUhkBAslxKb9VaLoTo1hasSVNY"
 TABLE_NAME = "chat_logs"
 
 def save_to_supabase(user_message, bot_reply):
