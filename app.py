@@ -46,7 +46,7 @@ def chat():
 
         try:
             r = requests.post(
-                "https://script.google.com/macros/s/AKfycbyTestWebhookForLogCapture1234567890abcdef/exec",
+                "https://script.google.com/macros/s/AKfycbz2dWmzWffeeTZ7pEhAC3guyXX-8aQIDVoVwTOcbX2dSSt9-y290meX2zmujX5f5eHp/exec",
                 json={"user": user_message, "bot": reply},
                 timeout=5
             )
