@@ -51,9 +51,12 @@ def chat():
     except Exception as e:
         return jsonify({"reply": f"⚠️ エラーが発生しました: {str(e)}"}), 500
 
+# 動作確認用
 @app.route("/")
 def index():
     return "AI・みまくん Flask サーバー起動中"
 
+# Render 用: ポートを環境変数から取得して起動
 if __name__ == "__main__":
-    app.run()
+    port = int(os.environ.get("PORT", 10000))
+    app.run(host="0.0.0.0", port=port)
