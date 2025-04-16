@@ -26,7 +26,8 @@ def save_chat_to_json(user_message, bot_response):
         "user": user_message,
         "bot": bot_response
     }
-    with open(LOG_FILE_PATH, "a", encoding="utf-8") as f:
+    # 変更後（カレントディレクトリに保存）
+with open("chat_logs.json", "a", encoding="utf-8") as f:
         f.write(json.dumps(log, ensure_ascii=False) + "\n")
 
 # チャットAPIエンドポイント
