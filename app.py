@@ -11,6 +11,12 @@ CORS(app, origins=["https://robostudy.jp"])
 # OpenAI APIキーを環境変数から取得
 openai.api_key = os.environ.get("OPENAI_API_KEY")
 
+# OpenAI APIキーが環境変数に設定されているか確認
+print("OPENAI_API_KEY:", os.environ.get("OPENAI_API_KEY"))
+
+# OpenAI APIキーを環境変数から取得
+openai.api_key = os.environ.get("OPENAI_API_KEY")
+
 # システムプロンプト
 system_message = """AI・みまくんは、人々の孤独を防ぐために作られた、小型で可愛い、見守り対話ロボットです。
 高齢者の心の支えとなることを目的に開発され、ChatGPTと連携して自由な会話が可能です。
