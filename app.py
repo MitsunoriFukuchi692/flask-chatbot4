@@ -1,11 +1,14 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-from openai import OpenAI
+import os
+from dotenv import load_dotenv
+import openai
+
+load_dotenv()
+openai.api_key = os.getenv("OPENAI_API_KEY")
 
 app = Flask(__name__)
 CORS(app)
-
-client = OpenAI(api_key="YOUR_OPENAI_API_KEY")
 
 @app.route("/chat", methods=["POST"])
 def chat():
@@ -13,14 +16,14 @@ def chat():
     user_message = data.get("message", "")
 
     try:
-        response = client.chat.completions.create(
+        response = openai.ChatCompletion.create(
             model="gpt-3.5-turbo",
             messages=[
                 {"role": "system", "content": "あなたは親切なアシスタントです。"},
                 {"role": "user", "content": user_message}
             ]
         )
-        reply = response.choices[0].message.content.strip()
+        reply = response.choices[0].message.strip()
         return jsonify({"reply": reply})
 
     except Exception as e:
