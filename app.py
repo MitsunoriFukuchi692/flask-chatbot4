@@ -3,12 +3,16 @@ from flask_cors import CORS
 import os
 from dotenv import load_dotenv
 import openai
+import traceback
 
+# .envからAPIキーを読み込む
 load_dotenv()
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
 app = Flask(__name__)
-CORS(app)
+
+# CORSの設定（robostudy.jpからのアクセスを許可）
+CORS(app, resources={r"/chat": {"origins": "https://robostudy.jp"}})
 
 @app.route("/chat", methods=["POST"])
 def chat():
@@ -27,6 +31,7 @@ def chat():
         return jsonify({"reply": reply})
 
     except Exception as e:
+        traceback.print_exc()  # ターミナルにエラーを出力
         return jsonify({"error": str(e)})
 
 if __name__ == "__main__":
