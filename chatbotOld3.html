@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>AI Chatbot</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; margin-top: 50px; }
+        #userMessage { color: red; }
+        #botResponse { color: blue; }
+    </style>
+</head>
+<body>
+    <h1>AI Chatbot</h1>
+    <p>Hello! How can I assist you today?</p>
+    <div id="userMessage">You: </div>
+    <div id="botResponse">Bot: </div>
+    <button onclick="startSpeechRecognition()">Start Speech Recognition</button>
+
+    <script>
+        const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+        recognition.lang = 'ja-JP';
+        recognition.continuous = true;
+        recognition.interimResults = false;
+
+        function startSpeechRecognition() {
+            recognition.start();
+            recognition.onstart = function() {
+                console.log('音声認識が開始されました');
+            };
+        }
+
+        recognition.onresult = function(event) {
+            let transcript = event.results[event.results.length - 1][0].transcript;
+            console.log('音声認識結果:', transcript);
+            document.getElementById("userMessage").innerText = `You: ${transcript}`;
+            sendMessageToServer(transcript);
+        };
+
+        function sendMessageToServer(message) {
+            fetch('https://flask-chatbot2-1.onrender.com/chat', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ message: message })
+            })
+            .then(response => response.json())
+            .then(data => {
+                const reply = data.reply || data.error || "（ボット応答エラー）";
+                document.getElementById("botResponse").innerText = `Bot: ${reply}`;
+            })
+            .catch(error => {
+                console.error('Fetch error:', error);
+                document.getElementById("botResponse").innerText = "Bot: 接続エラーが発生しました";
+            });
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,5 @@
+SUPABASE_URL=https://xxxxx.supabase.co
+SUPABASE_API_KEY=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+
+Project URL https://uvseetukwotbmyqdfcaj.supabase.co
+anon public eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV2c2VldHVrd290Ym15cWRmY2FqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQ1OTg3MzQsImV4cCI6MjA2MDE3NDczNH0.Jow9WA376Mo4xDYuyHUhkBAslxKb9VaLoTo1hasSVNY
