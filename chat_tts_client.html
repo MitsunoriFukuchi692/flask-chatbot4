@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>AI Chat + TTS</title>
+  <style>
+    body { font-family: sans-serif; padding: 20px; background: #f0f0f0; }
+    input, button { padding: 10px; margin: 5px; }
+    #response { margin-top: 20px; font-weight: bold; }
+    audio { display: block; margin-top: 10px; }
+  </style>
+</head>
+<body>
+  <h2>Chat with AI and Listen to the Response</h2>
+  <input type="text" id="user-input" placeholder="Ask me anything..." size="60">
+  <button onclick="sendMessage()">Send</button>
+  <div id="response"></div>
+  <audio id="audio" controls></audio>
+
+  <script>
+    async function sendMessage() {
+      const input = document.getElementById("user-input").value;
+      const responseDiv = document.getElementById("response");
+      const audio = document.getElementById("audio");
+
+      // Step 1: Get chat response
+      try {
+        const chatRes = await fetch("https://flask-chatbot2-1.onrender.com/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message: input })
+        });
+
+        const chatData = await chatRes.json();
+        if (chatData.reply) {
+          responseDiv.innerText = "AI: " + chatData.reply;
+
+          // Step 2: Get TTS from chat response
+          const ttsRes = await fetch("https://flask-chatbot2-1.onrender.com/speak", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ text: chatData.reply })
+          });
+
+          const audioBlob = await ttsRes.blob();
+          const audioUrl = URL.createObjectURL(audioBlob);
+          audio.src = audioUrl;
+          audio.play();
+        } else {
+          responseDiv.innerText = "Error: " + (chatData.error || "No reply received.");
+        }
+      } catch (error) {
+        responseDiv.innerText = "Fetch failed: " + error;
+      }
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <title>AIチャット＋音声応答 改良版</title>
+  <style>
+    body { font-family: sans-serif; padding: 20px; background: #f0f0f0; }
+    .chat-box { border-radius: 8px; padding: 10px; margin: 5px 0; }
+    .user { background: #d8f0ff; text-align: right; }
+    .bot { background: #e9ffe9; text-align: left; }
+    input, button { padding: 8px; font-size: 16px; }
+    #audio { margin-top: 15px; width: 100%; }
+  </style>
+</head>
+<body>
+  <h2>自動応答AI（安定版）</h2>
+  <p>こんにちは。質問を入力してください。</p>
+
+  <div id="chat-area"></div>
+
+  <input id="user-input" type="text" placeholder="例: 自己紹介してください" size="40">
+  <button onclick="sendMessage()">送信</button>
+
+  <audio id="audio" controls></audio>
+
+  <script>
+    async function sendMessage() {
+      const input = document.getElementById("user-input").value;
+      const chatArea = document.getElementById("chat-area");
+      const audio = document.getElementById("audio");
+      if (!input) return;
+
+      chatArea.innerHTML += `<div class='chat-box user'>You: ${input}</div>`;
+
+      try {
+        const chatRes = await fetch("https://flask-chatbot2-1.onrender.com/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message: input })
+        });
+
+        const data = await chatRes.json();
+        console.log("chat response:", data);
+        const reply = data.reply || data.response || data.message || "(返答なし)";
+
+        chatArea.innerHTML += `<div class='chat-box bot'>Bot: ${reply}</div>`;
+
+        if (reply && reply !== "(返答なし)") {
+          const ttsRes = await fetch("https://flask-chatbot2-1.onrender.com/speak", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ text: reply })
+          });
+
+          const audioBlob = await ttsRes.blob();
+          audio.src = URL.createObjectURL(audioBlob);
+          audio.play();
+        }
+
+      } catch (err) {
+        chatArea.innerHTML += `<div class='chat-box bot'>エラーが発生しました</div>`;
+        console.error("Fetch error:", err);
+      }
+
+      document.getElementById("user-input").value = "";
+    }
+  </script>
+</body>
+</html>

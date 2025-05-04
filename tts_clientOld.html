@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Text to Speech Demo</title>
+  <style>
+    body { font-family: sans-serif; padding: 20px; background-color: #f4f4f4; }
+    input, button { padding: 10px; font-size: 1em; margin: 5px; }
+    audio { margin-top: 20px; display: block; }
+  </style>
+</head>
+<body>
+  <h2>Google Cloud TTS 音声デモ</h2>
+  <input type="text" id="text-input" placeholder="Type text to speak" size="50">
+  <button onclick="sendText()">🔊 Speak</button>
+  <audio id="player" controls></audio>
+
+  <script>
+    function sendText() {
+      const text = document.getElementById('text-input').value;
+      fetch('/speak', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: text })
+      })
+      .then(res => res.blob())
+      .then(blob => {
+        const url = URL.createObjectURL(blob);
+        const audio = document.getElementById('player');
+        audio.src = url;
+        audio.play();
+      });
+    }
+  </script>
+</body>
+</html>

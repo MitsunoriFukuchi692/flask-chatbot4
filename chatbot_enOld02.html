@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Chatbot (Voice & Text)</title>
+  <style>
+    body { font-family: sans-serif; padding: 20px; background-color: #f9f9f9; }
+    #chat-container {
+      border: 1px solid #ccc; background: #fff; padding: 10px;
+      height: 50vh; overflow-y: scroll; margin-bottom: 10px;
+    }
+    #controls, #text-controls { margin-top: 10px; }
+    #start-button, #send-button {
+      padding: 10px 20px; margin-left: 5px;
+    }
+    #user-input {
+      width: 70%; padding: 10px;
+    }
+  </style>
+</head>
+<body>
+
+  <div style="text-align: right; margin-bottom: 10px;">
+    <a href="index_en.html" style="text-decoration: none; color: #5ca37e; font-weight: bold;">← Back to Home</a>
+  </div>
+
+  <h1>AI Chatbot (Voice & Text)</h1>
+  <div id="chat-container"></div>
+
+  <!-- Text input -->
+  <div id="text-controls">
+    <input type="text" id="user-input" placeholder="Type your message...">
+    <button id="send-button">Send</button>
+  </div>
+
+  <!-- Voice input -->
+  <div id="controls">
+    <button id="start-button">🎤 Speak</button>
+  </div>
+
+<script>
+const chatContainer = document.getElementById("chat-container");
+const startButton = document.getElementById("start-button");
+const sendButton = document.getElementById("send-button");
+const userInput = document.getElementById("user-input");
+
+let selectedVoice = null;
+
+function initVoices() {
+  const voices = speechSynthesis.getVoices();
+  selectedVoice = voices.find(v => v.lang === "en-US" && v.name.includes("Google US")) ||
+                  voices.find(v => v.lang === "en-US" && v.name.includes("Microsoft")) ||
+                  voices.find(v => v.lang === "en-US");
+}
+
+window.speechSynthesis.onvoiceschanged = () => {
+  if (!selectedVoice) initVoices();
+};
+
+function speak(text) {
+  const utterance = new SpeechSynthesisUtterance(text);
+  utterance.lang = "en-US";
+
+  // fallback: 再取得
+  if (!selectedVoice) initVoices();
+
+  if (selectedVoice) {
+    utterance.voice = selectedVoice;
+  }
+
+  speechSynthesis.speak(utterance);
+}
+
+async function sendToChatbot(text) {
+  addMessage(text, true);
+  try {
+    const res = await fetch("https://flask-chatbot2.onrender.com/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message: text })
+    });
+    const data = await res.json();
+    addMessage(data.reply, false);
+    speak(data.reply);
+  } catch {
+    const errorMsg = "⚠️ Unable to connect to the server.";
+    addMessage(errorMsg, false);
+    speak(errorMsg);
+  }
+}
+
+function addMessage(text, isUser = true) {
+  const div = document.createElement("div");
+  div.style.background = isUser ? "#e0f7fa" : "#f1f8e9";
+  div.style.padding = "8px";
+  div.style.margin = "5px 0";
+  div.textContent = text;
+  chatContainer.appendChild(div);
+  chatContainer.scrollTop = chatContainer.scrollHeight;
+}
+
+function startRecognition() {
+  const recognition = new webkitSpeechRecognition();
+  recognition.lang = "en-US";
+  recognition.interimResults = false;
+  recognition.maxAlternatives = 1;
+
+  recognition.onresult = (event) => {
+    const text = event.results[0][0].transcript;
+    sendToChatbot(text);
+  };
+
+  recognition.onerror = (event) => {
+    addMessage("🎤 Speech recognition error: " + event.error, false);
+  };
+
+  recognition.start();
+}
+
+function handleTextSubmit() {
+  const text = userInput.value.trim();
+  if (text) {
+    userInput.value = "";
+    sendToChatbot(text);
+  }
+}
+
+startButton.addEventListener("click", startRecognition);
+sendButton.addEventListener("click", handleTextSubmit);
+userInput.addEventListener("keypress", (e) => {
+  if (e.key === "Enter") handleTextSubmit();
+});
+
+window.addEventListener("load", () => {
+  if (speechSynthesis.getVoices().length !== 0) {
+    initVoices();
+  }
+  addMessage("Hello! Feel free to ask me anything.", false);
+});
+</script>
+</body>
+</html>

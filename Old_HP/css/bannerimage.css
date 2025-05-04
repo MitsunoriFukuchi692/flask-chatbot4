@@ -1,0 +1,30 @@
+/* -------------------------------------------------- 
+ * ÉoÉiÅ[
+-------------------------------------------------- */
+
+.bannerimage {
+    max-width: 1200px;
+    margin:0 auto 0;
+/*background-color:#ff3300;*/
+    text-align:right;
+}
+
+.bannerimage a img{
+    width:20%;
+    max-width: 80px;
+    height:auto;
+}
+
+
+@media screen and (min-width: 800px) {
+    .bannerimage {
+        margin:-80px auto 0;
+    }
+    .bannerimage img{
+        width:100% !important;
+        max-width: 120px !important;
+        padding-right:30px;
+    }
+    
+}
+
