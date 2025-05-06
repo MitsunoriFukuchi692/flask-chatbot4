@@ -1,9 +1,16 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, render_template, jsonify
 from flask_cors import CORS
 import os
 import openai
 import traceback
 from google.cloud import texttospeech
+from dotenv import load_dotenv
+
+load_dotenv() 
+
+os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
+
+tts_client = texttospeech.TextToSpeechClient()
 
 # 🌐 環境変数確認（Renderログで確認用）
 print("=========== 環境変数確認 ===========")
@@ -72,9 +79,11 @@ def speak():
         traceback.print_exc()
         return jsonify({"error": str(e)})
 
+print("GOOGLE_APPLICATION_CREDENTIALS:", os.environ.get("GOOGLE_APPLICATION_CREDENTIALS"))
+
 @app.route("/")
-def home():
-    return "Flask chatbot is running!"
+def index():
+    return render_template("speak.html")
 
 # ✅ アプリ起動
 if __name__ == "__main__":
