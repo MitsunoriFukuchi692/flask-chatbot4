@@ -1,12 +1,12 @@
-from flask import Flask, request, render_template, jsonify
+from flask import Flask, request, jsonify
 from flask_cors import CORS
 import os
 import openai
 import traceback
 from google.cloud import texttospeech
-from dotenv import load_dotenv
 
-load_dotenv() 
+from dotenv import load_dotenv
+load_dotenv()
 
 os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
 
@@ -19,7 +19,6 @@ print("=========== END ===========")
 
 # 🔧 OpenAI APIキー
 openai.api_key = os.environ.get("OPENAI_API_KEY")
-print("🔑 OPENAI_API_KEY =", os.environ.get("OPENAI_API_KEY"))
 
 # Flaskアプリ設定
 app = Flask(__name__)
@@ -80,13 +79,11 @@ def speak():
         traceback.print_exc()
         return jsonify({"error": str(e)})
 
-print("✅ 音声ファイル output.mp3 を生成しました")
-
 print("GOOGLE_APPLICATION_CREDENTIALS:", os.environ.get("GOOGLE_APPLICATION_CREDENTIALS"))
 
 @app.route("/")
-def index():
-    return render_template("speak.html")
+def home():
+    return "Flask chatbot is running!"
 
 # ✅ アプリ起動
 if __name__ == "__main__":
