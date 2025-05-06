@@ -20,6 +20,8 @@ print("=========== END ===========")
 # 🔧 OpenAI APIキー
 openai.api_key = os.environ.get("OPENAI_API_KEY")
 
+print("OPENAI_API_KEY =", os.environ.get("OPENAI_API_KEY"))
+
 # Flaskアプリ設定
 app = Flask(__name__)
 CORS(app, resources={r"/chat": {"origins": "https://robostudy.jp"}})
