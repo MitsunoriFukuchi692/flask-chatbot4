@@ -19,7 +19,6 @@ print("=========== END ===========")
 
 # 🔧 OpenAI APIキー
 openai.api_key = os.environ.get("OPENAI_API_KEY")
-print("🔑 OPENAI_API_KEY =", os.environ.get("OPENAI_API_KEY"))
 
 # Flaskアプリ設定
 app = Flask(__name__)
@@ -52,6 +51,8 @@ def speak():
     try:
         data = request.get_json()
         text = data.get("text", "")
+        if not text:
+            return jsonify({"error": "No text provided"}), 400
 
         client = texttospeech.TextToSpeechClient()
         synthesis_input = texttospeech.SynthesisInput(text=text)
@@ -78,13 +79,13 @@ def speak():
 
     except Exception as e:
         traceback.print_exc()
-        return jsonify({"error": str(e)})
+        return jsonify({"error": str(e)}),500
 
 print("✅ 音声ファイル output.mp3 を生成しました")
 
 print("GOOGLE_APPLICATION_CREDENTIALS:", os.environ.get("GOOGLE_APPLICATION_CREDENTIALS"))
 
-@app.route("/")
+@app.route("/", methods=["GET"])
 def index():
     return render_template("speak.html")
 
