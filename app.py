@@ -87,9 +87,18 @@ print("GOOGLE_APPLICATION_CREDENTIALS:", os.environ.get("GOOGLE_APPLICATION_CRED
 
 print(os.environ.get("OPENAI_API_KEY"))
 
-@app.route("/", methods=["GET"])
-def index():
-    return render_template("speak.html")
+@app.route("/check-openai")
+def check_openai():
+    try:
+       
+        openai.api_key = os.environ.get("OPENAI_API_KEY")
+        response = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo",
+            messages=[{"role": "user", "content": "こんにちは"}]
+        )
+        return response.choices[0].message["content"]
+    except Exception as e:
+        return f"Error: {str(e)}"
 
 # ✅ アプリ起動
 if __name__ == "__main__":
