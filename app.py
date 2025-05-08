@@ -90,7 +90,6 @@ print(os.environ.get("OPENAI_API_KEY"))
 @app.route("/check-openai")
 def check_openai():
     try:
-       
         openai.api_key = os.environ.get("OPENAI_API_KEY")
         response = openai.ChatCompletion.create(
             model="gpt-3.5-turbo",
@@ -98,7 +97,7 @@ def check_openai():
         )
         return response.choices[0].message["content"]
     except Exception as e:
-        return f"Error: {str(e)}"
+        return f"❌ エラー: {str(e)}"
 
 # ✅ アプリ起動
 if __name__ == "__main__":
