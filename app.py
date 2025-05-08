@@ -85,6 +85,8 @@ print("✅ 音声ファイル output.mp3 を生成しました")
 
 print("GOOGLE_APPLICATION_CREDENTIALS:", os.environ.get("GOOGLE_APPLICATION_CREDENTIALS"))
 
+print(os.environ.get("OPENAI_API_KEY"))
+
 @app.route("/", methods=["GET"])
 def index():
     return render_template("speak.html")
