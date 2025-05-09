@@ -3,21 +3,24 @@ from flask_cors import CORS
 import os
 import openai
 import traceback
-from google.cloud import texttospeech
+import json
 from dotenv import load_dotenv
+from google.cloud import texttospeech
+from google.oauth2 import service_account
 
-load_dotenv() 
+load_dotenv()
 
-os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
+# Google Cloud TTS 認証情報をJSON環境変数から読み込む
+creds_info = json.loads(os.getenv("GOOGLE_CREDENTIALS_JSON"))
+credentials = service_account.Credentials.from_service_account_info(creds_info)
+tts_client = texttospeech.TextToSpeechClient(credentials=credentials)
 
-tts_client = texttospeech.TextToSpeechClient()
-
-# 🌐 環境変数確認（Renderログで確認用）
+# 環境変数確認ログ
 print("=========== 環境変数確認 ===========")
-print("GOOGLE_APPLICATION_CREDENTIALS =", os.environ.get("GOOGLE_APPLICATION_CREDENTIALS"), flush=True)
+print("GOOGLE_CREDENTIALS_JSON is set:", os.getenv("GOOGLE_CREDENTIALS_JSON") is not None, flush=True)
 print("=========== END ===========")
 
-# 🔧 OpenAI APIキー
+# OpenAI APIキー設定
 openai.api_key = os.environ.get("OPENAI_API_KEY")
 
 # Flaskアプリ設定
@@ -54,7 +57,7 @@ def speak():
         if not text:
             return jsonify({"error": "No text provided"}), 400
 
-        client = texttospeech.TextToSpeechClient()
+        client = tts_client
         synthesis_input = texttospeech.SynthesisInput(text=text)
 
         voice = texttospeech.VoiceSelectionParams(
@@ -79,18 +82,12 @@ def speak():
 
     except Exception as e:
         traceback.print_exc()
-        return jsonify({"error": str(e)}),500
+        return jsonify({"error": str(e)}), 500
 
-print("✅ 音声ファイル output.mp3 を生成しました")
-
-print("GOOGLE_APPLICATION_CREDENTIALS:", os.environ.get("GOOGLE_APPLICATION_CREDENTIALS"))
-
-print(os.environ.get("OPENAI_API_KEY"))
-
+# 動作チェック用
 @app.route("/check-openai")
 def check_openai():
     try:
-        openai.api_key = os.environ.get("OPENAI_API_KEY")
         response = openai.ChatCompletion.create(
             model="gpt-3.5-turbo",
             messages=[{"role": "user", "content": "こんにちは"}]
@@ -103,4 +100,3 @@ def check_openai():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
-
