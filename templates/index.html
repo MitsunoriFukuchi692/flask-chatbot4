@@ -2,41 +2,45 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>音声合成テスト</title>
+    <title>自動応答AI</title>
+    <style>
+        body { font-family: sans-serif; margin: 20px; }
+        textarea { width: 100%; height: 100px; }
+        .response { margin-top: 10px; padding: 10px; background-color: #f0f0f0; }
+    </style>
 </head>
 <body>
-    <h2>自動応答AI</h2>
+    <h1>自動応答AI</h1>
     <p>こんにちは。お聞きになりたいことを教えてください。</p>
 
-    <div>
-        <textarea id="userText" rows="4" cols="50">こんにちは、世界！</textarea><br>
-        <button onclick="sendText()">音声を再生</button>
+    <textarea id="userText" placeholder="例：お名前は？"></textarea><br><br>
+    <button onclick="sendText()">音声認識開始</button>
+
+    <div class="response">
+        <strong>Bot:</strong> <span id="botResponse">（応答がここに表示されます）</span>
     </div>
 
-    <div id="responseArea" style="margin-top: 1em;"></div>
-    <audio id="audioPlayer" controls style="display:none; margin-top: 1em;"></audio>
+    <audio id="audioPlayer" controls style="margin-top: 20px;"></audio>
 
     <script>
-        function sendText() {
+        async function sendText() {
             const userText = document.getElementById("userText").value;
-            fetch("/chat", {
+
+            const response = await fetch("/chat", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json"
                 },
                 body: JSON.stringify({ text: userText })
-            })
-            .then(response => response.json())
-            .then(data => {
-                document.getElementById("responseArea").innerText = "Bot: " + data.response_text;
-                const audioPlayer = document.getElementById("audioPlayer");
-                audioPlayer.src = "/static/output.mp3";
-                audioPlayer.style.display = "block";
-                audioPlayer.play();
-            })
-            .catch(error => {
-                console.error("エラー:", error);
             });
+
+            if (response.ok) {
+                const data = await response.json();
+                document.getElementById("botResponse").innerText = data.response_text;
+                document.getElementById("audioPlayer").src = "/static/output.mp3";
+            } else {
+                document.getElementById("botResponse").innerText = "エラーが発生しました。";
+            }
         }
     </script>
 </body>
