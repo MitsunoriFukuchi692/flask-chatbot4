@@ -1,30 +1,47 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <title>音声チャットボット</title>
+    <meta charset="UTF-8">
+    <title>音声合成テスト</title>
 </head>
 <body>
-  <h2>こんにちは、AIチャットボットです。</h2>
-  <textarea id="text" rows="4" cols="50" placeholder="メッセージを入力してください"></textarea><br>
-  <button onclick="sendMessage()">送信</button>
-  <p id="response"></p>
-  <audio id="audio" controls></audio>
+    <h1>音声合成テスト</h1>
+    <p>読み上げたいテキストを入力してください：</p>
+    <form id="chat-form">
+        <textarea id="user-text" name="text" rows="4" cols="50">こんにちは、世界！今日は誕生日です。おめでとうFUKUちゃん。</textarea><br>
+        <button type="submit">音声を再生</button>
+    </form>
+    <p id="response-text"></p>
+    <audio id="audio-player" controls style="display:none;">
+        <source id="audio-source" src="" type="audio/mpeg">
+        お使いのブラウザは audio タグをサポートしていません。
+    </audio>
 
-  <script>
-    function sendMessage() {
-      const text = document.getElementById("text").value;
-      fetch("/chat", {
-        method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({text: text})
-      })
-      .then(response => response.json())
-      .then(data => {
-        document.getElementById("response").innerText = data.response_text;
-        document.getElementById("audio").src = data.audio_url;
-      });
-    }
-  </script>
+    <script>
+        document.getElementById("chat-form").addEventListener("submit", function(e) {
+            e.preventDefault();
+            const userText = document.getElementById("user-text").value;
+
+            fetch("/chat", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ text: userText })
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById("response-text").innerText = data.response_text;
+                const audio = document.getElementById("audio-player");
+                const source = document.getElementById("audio-source");
+                source.src = "/static/output.mp3?" + new Date().getTime(); // キャッシュ対策
+                audio.load();
+                audio.style.display = "block";
+            })
+            .catch(error => {
+                alert("エラーが発生しました: " + error);
+            });
+        });
+    </script>
 </body>
 </html>
