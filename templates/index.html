@@ -2,44 +2,43 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>自動応答AI</title>
-    <style>
-        body { font-family: sans-serif; margin: 20px; }
-        textarea { width: 100%; height: 100px; }
-        .response { margin-top: 10px; padding: 10px; background-color: #f0f0f0; }
-    </style>
+    <title>音声合成テスト</title>
 </head>
 <body>
-    <h1>自動応答AI</h1>
-    <p>こんにちは。お聞きになりたいことを教えてください。</p>
-
-    <textarea id="userText" placeholder="例：お名前は？"></textarea><br><br>
-    <button onclick="sendText()">音声認識開始</button>
-
-    <div class="response">
-        <strong>Bot:</strong> <span id="botResponse">（応答がここに表示されます）</span>
-    </div>
-
-    <audio id="audioPlayer" controls style="margin-top: 20px;"></audio>
+    <h2>音声合成テスト</h2>
+    <form id="speakForm">
+        <label for="text">読み上げたいテキストを入力してください：</label><br>
+        <textarea id="text" name="text" rows="4" cols="50"></textarea><br>
+        <button type="submit">音声を再生</button>
+    </form>
+    <p id="response"></p>
+    <audio id="audioPlayer" controls style="display:none;"></audio>
 
     <script>
-  document.getElementById("speakForm").addEventListener("submit", async function(e) {
-    e.preventDefault();
-    const text = document.getElementById("text").value;
+        window.addEventListener("DOMContentLoaded", function () {
+            const form = document.getElementById("speakForm");
+            form.addEventListener("submit", function (e) {
+                e.preventDefault();
+                const text = document.getElementById("text").value;
 
-    const response = await fetch("/chat", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ text: text })
-    });
-
-    const data = await response.json();
-    document.getElementById("response").textContent = "Bot: " + data.response_text;
-    document.getElementById("audioPlayer").src = "/static/output.mp3";
-  });
-</script>
-
+                fetch("/chat", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ text: text })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById("response").innerText = "Bot: " + data.response_text;
+                    const audio = document.getElementById("audioPlayer");
+                    audio.src = "/static/output.mp3";
+                    audio.style.display = "block";
+                    audio.play();
+                })
+                .catch(error => {
+                    console.error("エラー:", error);
+                });
+            });
+        });
+    </script>
 </body>
 </html>
