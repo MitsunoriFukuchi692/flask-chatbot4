@@ -23,25 +23,23 @@
     <audio id="audioPlayer" controls style="margin-top: 20px;"></audio>
 
     <script>
-        async function sendText() {
-            const userText = document.getElementById("userText").value;
+  document.getElementById("speakForm").addEventListener("submit", async function(e) {
+    e.preventDefault();
+    const text = document.getElementById("text").value;
 
-            const response = await fetch("/chat", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({ text: userText })
-            });
+    const response = await fetch("/chat", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ text: text })
+    });
 
-            if (response.ok) {
-                const data = await response.json();
-                document.getElementById("botResponse").innerText = data.response_text;
-                document.getElementById("audioPlayer").src = "/static/output.mp3";
-            } else {
-                document.getElementById("botResponse").innerText = "エラーが発生しました。";
-            }
-        }
-    </script>
+    const data = await response.json();
+    document.getElementById("response").textContent = "Bot: " + data.response_text;
+    document.getElementById("audioPlayer").src = "/static/output.mp3";
+  });
+</script>
+
 </body>
 </html>
