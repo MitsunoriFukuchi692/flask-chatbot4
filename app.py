@@ -10,6 +10,7 @@ app = Flask(__name__, template_folder="templates", static_folder="static")
 
 # 環境変数からキーを取得
 openai.api_key = os.getenv("OPENAI_API_KEY")
+
 os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
 
 @app.route("/")
@@ -43,6 +44,8 @@ def chat():
         out.write(response.audio_content)
 
     return jsonify({"response_text": response_text, "audio_url": "/static/output.mp3"})
+
+print("🔑 Loaded OpenAI API Key:", openai.api_key)
 
 if __name__ == "__main__":
     app.run(debug=False, host="0.0.0.0", port=10000)
