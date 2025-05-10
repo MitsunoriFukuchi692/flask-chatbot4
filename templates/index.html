@@ -1,47 +1,65 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-    <meta charset="UTF-8">
-    <title>音声合成テスト</title>
+  <meta charset="UTF-8" />
+  <title>自動応答AI</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      margin: 20px;
+    }
+    .chat-box {
+      border: 1px solid #ccc;
+      padding: 10px;
+      max-width: 600px;
+    }
+    .bot { background-color: #e0f7fa; padding: 5px; margin-top: 10px; }
+    .user { background-color: #f1f8e9; padding: 5px; margin-top: 10px; }
+  </style>
 </head>
 <body>
-    <h1>音声合成テスト</h1>
-    <p>読み上げたいテキストを入力してください：</p>
-    <form id="chat-form">
-        <textarea id="user-text" name="text" rows="4" cols="50">こんにちは、世界！今日は誕生日です。おめでとうFUKUちゃん。</textarea><br>
-        <button type="submit">音声を再生</button>
-    </form>
-    <p id="response-text"></p>
-    <audio id="audio-player" controls style="display:none;">
-        <source id="audio-source" src="" type="audio/mpeg">
-        お使いのブラウザは audio タグをサポートしていません。
-    </audio>
+  <h2>自動応答AI</h2>
+  <p>こんにちは。お聞きになりたいことを教えてください。</p>
 
-    <script>
-        document.getElementById("chat-form").addEventListener("submit", function(e) {
-            e.preventDefault();
-            const userText = document.getElementById("user-text").value;
+  <div class="chat-box" id="chat"></div>
 
-            fetch("/chat", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({ text: userText })
-            })
-            .then(response => response.json())
-            .then(data => {
-                document.getElementById("response-text").innerText = data.response_text;
-                const audio = document.getElementById("audio-player");
-                const source = document.getElementById("audio-source");
-                source.src = "/static/output.mp3?" + new Date().getTime(); // キャッシュ対策
-                audio.load();
-                audio.style.display = "block";
-            })
-            .catch(error => {
-                alert("エラーが発生しました: " + error);
-            });
-        });
-    </script>
+  <input type="text" id="userText" style="width: 400px;" placeholder="こんにちは、みまくん！" />
+  <button onclick="sendText()">送信</button>
+
+  <br><br>
+  <audio id="audioPlayer" controls></audio>
+
+  <script>
+    async function sendText() {
+      const userText = document.getElementById("userText").value;
+      const chatDiv = document.getElementById("chat");
+
+      // ユーザーのメッセージ表示
+      const userMessage = document.createElement("div");
+      userMessage.className = "user";
+      userMessage.innerText = "You: " + userText;
+      chatDiv.appendChild(userMessage);
+
+      // サーバーに送信
+      const response = await fetch("/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: userText })
+      });
+
+      const result = await response.json();
+
+      // Botのテキスト応答表示
+      const botMessage = document.createElement("div");
+      botMessage.className = "bot";
+      botMessage.innerText = "Bot: " + result.response_text;
+      chatDiv.appendChild(botMessage);
+
+      // 音声再生
+      const audio = document.getElementById("audioPlayer");
+      audio.src = "/static/output.mp3";
+      audio.play();
+    }
+  </script>
 </body>
 </html>
