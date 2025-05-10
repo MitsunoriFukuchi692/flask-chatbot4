@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>音声チャットボット</title>
+</head>
+<body>
+  <h2>こんにちは、AIチャットボットです。</h2>
+  <textarea id="text" rows="4" cols="50" placeholder="メッセージを入力してください"></textarea><br>
+  <button onclick="sendMessage()">送信</button>
+  <p id="response"></p>
+  <audio id="audio" controls></audio>
+
+  <script>
+    function sendMessage() {
+      const text = document.getElementById("text").value;
+      fetch("/chat", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({text: text})
+      })
+      .then(response => response.json())
+      .then(data => {
+        document.getElementById("response").innerText = data.response_text;
+        document.getElementById("audio").src = data.audio_url;
+      });
+    }
+  </script>
+</body>
+</html>
