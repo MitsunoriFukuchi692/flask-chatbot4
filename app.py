@@ -50,5 +50,6 @@ def chat():
     return jsonify({"response_text": response_text})
 
 # ローカルテスト用（Renderでは不要）
-# if __name__ == "__main__":
-#     app.run(debug=False, host="0.0.0.0", port=10000)
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 10000))  # Render が指定するポートを使用
+    app.run(debug=False, host="0.0.0.0", port=port)
