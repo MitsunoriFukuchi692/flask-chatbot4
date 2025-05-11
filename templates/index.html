@@ -18,33 +18,34 @@
     <!-- 音声再生用プレーヤー -->
     <audio id="audioPlayer" controls style="display:none;"></audio>
 
-    <script>
-        document.getElementById("speakForm").addEventListener("submit", function (e) {
-            e.preventDefault();
-            const text = document.getElementById("text").value;
+    <!-- HTMLファイルの末尾に置いてください -->
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    document.getElementById("speakForm").addEventListener("submit", function (e) {
+        e.preventDefault();
+        const text = document.getElementById("text").value;
 
-            fetch("/chat", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({ text: text })
-            })
-            .then(response => response.json())
-            .then(data => {
-                // 応答表示
-                document.getElementById("response").innerText = "Bot: " + data.response_text;
-
-                // 音声再生
-                const audio = document.getElementById("audioPlayer");
-                audio.src = "/static/output.mp3";
-                audio.style.display = "block";
-                audio.play();
-            })
-            .catch(error => {
-                console.error("エラー:", error);
-            });
+        fetch("/chat", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ text: text })
+        })
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById("response").innerText = "Bot: " + data.response_text;
+            const audio = document.getElementById("audioPlayer");
+            audio.src = "/static/output.mp3";
+            audio.style.display = "block";
+            audio.play();
+        })
+        .catch(error => {
+            console.error("エラー:", error);
         });
-    </script>
+    });
+});
+</script>
+
 </body>
 </html>
