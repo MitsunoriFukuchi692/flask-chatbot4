@@ -13,7 +13,7 @@ os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = os.getenv("GOOGLE_APPLICATION_CRE
 def index():
     return render_template("index.html")
 
-@app.route("/chatbot.html")
+@app.route("/chatbot")
 def chatbot():
     return render_template("chatbot.html")
 
@@ -22,6 +22,7 @@ def chat():
     data = request.get_json()
     user_text = data["text"]
     print("受け取ったテキスト:", user_text)
+
 
     # ChatGPTへ送信
     chat_response = openai.ChatCompletion.create(
