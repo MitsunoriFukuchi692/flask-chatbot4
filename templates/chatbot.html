@@ -1,69 +1,48 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <title>みまくん Chatbot</title>
-  <style>
-    body { font-family: sans-serif; }
-    #chatbox { width: 100%; height: 200px; border: 1px solid #ccc; overflow-y: scroll; margin-bottom: 10px; padding: 10px; }
-    #userInput { width: 80%; }
-  </style>
+    <meta charset="UTF-8">
+    <title>みまくん Chatbot</title>
 </head>
 <body>
-  <h1>みまくん Chatbot</h1>
-  <div id="chatbox"></div>
-  <input type="text" id="userInput" placeholder="メッセージを入力...">
-  <button onclick="sendMessage()">送信</button>
+    <h1>みまくん Chatbot</h1>
+    <div id="chatLog" style="border:1px solid #ccc; padding:10px; width:100%; height:200px; overflow:auto;"></div>
+    <input type="text" id="userInput" placeholder="メッセージを入力..." style="width:80%;">
+    <button onclick="sendMessage()">送信</button>
+    <br><br>
+    <!-- 🔊 音声再生プレイヤー -->
+    <audio id="audioPlayer" controls style="display:none;"></audio>
 
-  <script>
-    function appendMessage(sender, text) {
-      const chatbox = document.getElementById("chatbox");
-      const message = document.createElement("div");
-      message.textContent = sender + ": " + text;
-      chatbox.appendChild(message);
-      chatbox.scrollTop = chatbox.scrollHeight;
-    }
+    <script>
+        function sendMessage() {
+            const input = document.getElementById("userInput").value;
+            if (!input) return;
 
-    async function sendMessage() {
-      const input = document.getElementById("userInput");
-      const message = input.value;
-      if (!message) return;
+            const chatLog = document.getElementById("chatLog");
+            chatLog.innerHTML += "<p><strong>あなた:</strong> " + input + "</p>";
 
-      appendMessage("あなた", message);
-      input.value = "";
+            fetch("/chat", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ text: input })
+            })
+            .then(response => response.json())
+            .then(data => {
+                chatLog.innerHTML += "<p><strong>みまくん:</strong> " + data.response_text + "</p>";
+                
+                // 音声ファイル再生処理
+                const audio = document.getElementById("audioPlayer");
+                audio.src = "/static/output.mp3" + "?t=" + new Date().getTime();  // キャッシュ防止
+                audio.style.display = "block";
+                audio.play();
+            })
+            .catch(error => {
+                chatLog.innerHTML += "<p style='color:red;'>エラーが発生しました。</p>";
+                console.error("通信エラー:", error);
+            });
 
-      try {
-        const response = await fetch("/chat", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ text: message })
-        });
-
-        const data = await response.json();
-        const reply = data.response_text;
-        appendMessage("みまくん", reply);
-        speak(reply);
-      } catch (error) {
-        console.error("チャット送信エラー:", error);
-      }
-    }
-
-    function speak(text) {
-      fetch("/speak", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: text })
-      })
-      .then(response => response.blob())
-      .then(blob => {
-        const audio = new Audio();
-        audio.src = URL.createObjectURL(blob);
-        audio.play();
-      })
-      .catch(error => {
-        console.error("音声合成エラー:", error);
-      });
-    }
-  </script>
+            document.getElementById("userInput").value = "";
+        }
+    </script>
 </body>
 </html>
