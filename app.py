@@ -19,6 +19,10 @@ def chatbot():
 
 @app.route("/chat", methods=["POST"])
 def chat():
+    print("🔑 OPENAI_API_KEY =", os.getenv("OPENAI_API_KEY"))
+    print("🔑 GOOGLE_APPLICATION_CREDENTIALS =", os.getenv("GOOGLE_APPLICATION_CREDENTIALS"))
+
+
     data = request.get_json()
     user_text = data["text"]
     print("受け取ったテキスト:", user_text)
