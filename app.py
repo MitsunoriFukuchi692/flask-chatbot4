@@ -14,14 +14,16 @@ load_dotenv()
 app = Flask(__name__)
 
 # OpenAI APIキーとGoogle Cloud認証情報の読み込み
-openai.api_key = os.getenv("OPENAI_API_KEY")
-assert openai.api_key, "OpenAI API key is not set in environment variables."
+#openai.api_key = os.getenv("OPENAI_API_KEY")
+#assert openai.api_key, "OpenAI API key is not set in environment variables."
+openai.api_key_path = os.getenv("OPENAI_API_KEY_PATH")
+assert openai.api_key_path, "OpenAI API key path is not set in environment variables."
 #os.environ["GOOGLE_APPLICATION_CREDENTIALS"]
 google_application_credentials = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
 assert google_application_credentials, "Google Cloud credentials are not set in environment variables."
-credential_path = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
-if not Path(credential_path).exists():
-    raise FileNotFoundError(f"Google Cloud credentials file not found: {credential_path}")  
+'''credential_path = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
+    if not Path(credential_path).exists():
+        raise FileNotFoundError(f"Google Cloud credentials file not found: {credential_path}")  '''
 @app.route("/")
 def index():
     return render_template("index.html")
