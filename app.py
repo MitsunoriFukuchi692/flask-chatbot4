@@ -23,19 +23,15 @@ def chatbot():
 
 @app.route("/chat", methods=["POST"])
 def chat():
-    print("📥 RAW REQUEST:", request.data)
-    user_text = request.json.get("text")
-    
-    print("✅ USER TEXT:", user_text, flush=True)
-    print("🔑 OPENAI_API_KEY:", os.getenv("OPENAI_API_KEY"), flush=True)
-    print("🔑 GOOGLE_APPLICATION_CREDENTIALS:", os.getenv("GOOGLE_APPLICATION_CREDENTIALS"), flush=True)
+    print("📥 RAW REQUEST:", request.data, flush=True)
+
     try:
         data = request.get_json()
         user_text = data.get("text", "")
 
-        print("✅ USER TEXT:", user_text)
-        print("🔑 OPENAI_API_KEY:", os.getenv("OPENAI_API_KEY"))
-        print("🔑 GOOGLE_APPLICATION_CREDENTIALS:", os.getenv("GOOGLE_APPLICATION_CREDENTIALS"))
+        print("✅ USER TEXT:", user_text, flush=True)
+        print("🔑 OPENAI_API_KEY:", os.getenv("OPENAI_API_KEY"), flush=True)
+        print("🔑 GOOGLE_APPLICATION_CREDENTIALS:", os.getenv("GOOGLE_APPLICATION_CREDENTIALS"), flush=True)
 
         # OpenAI から応答生成
         response = openai.ChatCompletion.create(
@@ -46,33 +42,38 @@ def chat():
             ]
         )
         response_text = response['choices'][0]['message']['content'].strip()
-        print("🤖 OpenAI 応答:", response_text)
+        print("🤖 OpenAI 応答:", response_text, flush=True)
 
         # Google Cloud TTS 音声合成
-        tts_client = texttospeech.TextToSpeechClient()
-        synthesis_input = texttospeech.SynthesisInput(text=response_text)
-        voice = texttospeech.VoiceSelectionParams(
-            language_code="ja-JP",
-            ssml_gender=texttospeech.SsmlVoiceGender.NEUTRAL
-        )
-        audio_config = texttospeech.AudioConfig(audio_encoding=texttospeech.AudioEncoding.MP3)
+        try:
+            tts_client = texttospeech.TextToSpeechClient()
+            synthesis_input = texttospeech.SynthesisInput(text=response_text)
+            voice = texttospeech.VoiceSelectionParams(
+                language_code="ja-JP",
+                ssml_gender=texttospeech.SsmlVoiceGender.NEUTRAL
+            )
+            audio_config = texttospeech.AudioConfig(audio_encoding=texttospeech.AudioEncoding.MP3)
 
-        tts_response = tts_client.synthesize_speech(
-            input=synthesis_input,
-            voice=voice,
-            audio_config=audio_config
-        )
+            tts_response = tts_client.synthesize_speech(
+                input=synthesis_input,
+                voice=voice,
+                audio_config=audio_config
+            )
 
-        # 音声ファイルの保存（static/output.mp3）
-        output_path = os.path.join("static", "output.mp3")
-        with open(output_path, "wb") as out:
-            out.write(tts_response.audio_content)
-        print("✅ 音声ファイルを保存しました:", output_path)
+            # 音声ファイルの保存
+            output_path = os.path.join("static", "output.mp3")
+            with open(output_path, "wb") as out:
+                out.write(tts_response.audio_content)
+            print("✅ 音声ファイルを保存しました:", output_path, flush=True)
+
+        except Exception as e:
+            print("❌ 音声ファイル生成エラー:", e, flush=True)
+            return jsonify({"response_text": "音声の生成に失敗しました。"}), 500
 
         return jsonify({"response_text": response_text})
 
     except Exception as e:
-        print("🚨 エラーが発生:", str(e))
+        print("🚨 全体の処理エラー:", str(e), flush=True)
         return jsonify({"response_text": "エラーが発生しました。"}), 500
 
 if __name__ == "__main__":
