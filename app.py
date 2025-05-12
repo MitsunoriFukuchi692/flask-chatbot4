@@ -6,6 +6,7 @@ from flask import Flask, render_template, request, jsonify
 from google.cloud import texttospeech
 import openai
 from dotenv import load_dotenv
+from pathlib import Path
 
 # .envファイルから環境変数を読み込み
 load_dotenv()
@@ -14,8 +15,13 @@ app = Flask(__name__)
 
 # OpenAI APIキーとGoogle Cloud認証情報の読み込み
 openai.api_key = os.getenv("OPENAI_API_KEY")
-os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
-
+assert openai.api_key, "OpenAI API key is not set in environment variables."
+#os.environ["GOOGLE_APPLICATION_CREDENTIALS"]
+google_application_credentials = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
+assert google_application_credentials, "Google Cloud credentials are not set in environment variables."
+credential_path = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
+if not Path(credential_path).exists():
+    raise FileNotFoundError(f"Google Cloud credentials file not found: {credential_path}")  
 @app.route("/")
 def index():
     return render_template("index.html")
