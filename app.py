@@ -23,6 +23,7 @@ def chatbot():
 
 @app.route("/chat", methods=["POST"])
 def chat():
+    print("📥 RAW REQUEST:", request.data)
     user_text = request.json.get("text")
     
     print("✅ USER TEXT:", user_text, flush=True)
