@@ -23,6 +23,11 @@ def chatbot():
 
 @app.route("/chat", methods=["POST"])
 def chat():
+    print("✅ /chat にリクエストが届きました", flush=True)
+    print("✅ /chat にリクエストが届きました", flush=True)
+    print("✅ USER TEXT:", user_text, flush=True)
+    print("🔑 OPENAI_API_KEY:", os.getenv("OPENAI_API_KEY"), flush=True)
+    print("🔑 GOOGLE_APPLICATION_CREDENTIALS:", os.getenv("GOOGLE_APPLICATION_CREDENTIALS"), flush=True)
     try:
         data = request.get_json()
         user_text = data.get("text", "")
