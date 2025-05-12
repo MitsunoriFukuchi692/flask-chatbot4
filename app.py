@@ -1,16 +1,20 @@
 
+
 import os
-from flask import Flask, request, jsonify, render_template
-from dotenv import load_dotenv
+import json
+from flask import Flask, render_template, request, jsonify
 from google.cloud import texttospeech
 import openai
+from dotenv import load_dotenv
 
-# 環境変数の読み込み
+# .envファイルから環境変数を読み込み
 load_dotenv()
-openai.api_key = os.getenv("OPENAI_API_KEY")
-os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
 
 app = Flask(__name__)
+
+# OpenAI APIキーとGoogle Cloud認証情報の読み込み
+openai.api_key = os.getenv("OPENAI_API_KEY")
+os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
 
 @app.route("/")
 def index():
@@ -23,49 +27,43 @@ def chatbot():
 @app.route("/chat", methods=["POST"])
 def chat():
     try:
-        print("📥 RAW REQUEST:", request.data)
-        data = request.get_json(force=True)
-        user_text = data.get("text", "")
-        print("✅ USER TEXT:", user_text)
-        print("🔑 OPENAI_API_KEY:", os.getenv("OPENAI_API_KEY"))
-        print("🔑 GOOGLE_APPLICATION_CREDENTIALS:", os.getenv("GOOGLE_APPLICATION_CREDENTIALS"))
+        print("📥 RAW REQUEST:", request.data, flush=True)
 
-        # OpenAI GPT 応答生成
+        data = json.loads(request.data)
+        user_text = data.get("text", "").strip()
+
+        print("✅ USER TEXT:", user_text, flush=True)
+        print("🔑 OPENAI_API_KEY:", os.getenv("OPENAI_API_KEY"), flush=True)
+        print("🔑 GOOGLE_APPLICATION_CREDENTIALS:", os.getenv("GOOGLE_APPLICATION_CREDENTIALS"), flush=True)
+
+        # OpenAI Chat API (v1.0.0以降)
         response = openai.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=[{"role": "user", "content": user_text}]
         )
-        response_text = response.choices[0].message.content.strip()
-        print("🤖 GPT応答:", response_text)
+        reply_text = response.choices[0].message.content.strip()
+        print("🤖 ChatGPT 応答:", reply_text, flush=True)
 
-        # Google TTS 音声合成
+        # Google Cloud TTS
         tts_client = texttospeech.TextToSpeechClient()
-        synthesis_input = texttospeech.SynthesisInput(text=response_text)
+        synthesis_input = texttospeech.SynthesisInput(text=reply_text)
         voice = texttospeech.VoiceSelectionParams(
-            language_code="ja-JP",
-            ssml_gender=texttospeech.SsmlVoiceGender.NEUTRAL
+            language_code="ja-JP", ssml_gender=texttospeech.SsmlVoiceGender.NEUTRAL
         )
-        audio_config = texttospeech.AudioConfig(
-            audio_encoding=texttospeech.AudioEncoding.MP3
-        )
+        audio_config = texttospeech.AudioConfig(audio_encoding=texttospeech.AudioEncoding.MP3)
+        tts_response = tts_client.synthesize_speech(input=synthesis_input, voice=voice, audio_config=audio_config)
 
-        tts_response = tts_client.synthesize_speech(
-            input=synthesis_input,
-            voice=voice,
-            audio_config=audio_config
-        )
-
-        # static/output.mp3 に保存
         output_path = os.path.join("static", "output.mp3")
         with open(output_path, "wb") as out:
             out.write(tts_response.audio_content)
-        print("✅ TTS 音声ファイルを保存:", output_path)
 
-        return jsonify({"response_text": response_text})
+        print("✅ 音声ファイル生成:", output_path, flush=True)
+
+        return jsonify({"reply": reply_text})
 
     except Exception as e:
-        print("🛑 全体の処理エラー:", e)
-        return jsonify({"response_text": "エラーが発生しました。"}), 500
+        print("⚠️ 全体の処理エラー:", str(e), flush=True)
+        return jsonify({"reply": "エラーが発生しました。"}), 500
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=10000)
