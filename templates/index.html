@@ -36,7 +36,7 @@ document.addEventListener("DOMContentLoaded", function () {
         .then(data => {
             document.getElementById("response").innerText = "Bot: " + data.response_text;
             const audio = document.getElementById("audioPlayer");
-            audio.src = "/static/output.mp3";
+            audio.src = "/static/output.mp3?t=" + new Date().getTime();  // キャッシュ防止
             audio.style.display = "block";
             audio.play();
         })
