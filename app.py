@@ -4,26 +4,33 @@ import os
 import json
 from flask import Flask, render_template, request, jsonify
 from google.cloud import texttospeech
-import openai
-from dotenv import load_dotenv
+#import openai
+import dotenv
+#from dotenv import load_dotenv
 from pathlib import Path
+from openai import OpenAI
+secret_fullpath = Path('/etc/secrets/.env')
 
 # .envファイルから環境変数を読み込み
-load_dotenv()
+config = dotenv.dotenv_values(secret_fullpath)
 
 app = Flask(__name__)
 
 # OpenAI APIキーとGoogle Cloud認証情報の読み込み
-#openai.api_key = os.getenv("OPENAI_API_KEY")
-#assert openai.api_key, "OpenAI API key is not set in environment variables."
-openai.api_key_path = os.getenv("OPENAI_API_KEY_PATH")
-assert openai.api_key_path, "OpenAI API key path is not set in environment variables."
+openai_api_key = os.getenv("OPENAI_API_KEY")
+assert openai_api_key, "OpenAI API key is not set in environment variables."
+#openai.api_key_path = os.getenv("OPENAI_API_KEY_PATH")
+#assert openai.api_key_path, "OpenAI API key path is not set in environment variables."
 #os.environ["GOOGLE_APPLICATION_CREDENTIALS"]
 google_application_credentials = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
 assert google_application_credentials, "Google Cloud credentials are not set in environment variables."
 '''credential_path = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
     if not Path(credential_path).exists():
         raise FileNotFoundError(f"Google Cloud credentials file not found: {credential_path}")  '''
+
+# Create an OpenAI object with a specific API key
+openai_client = OpenAI(api_key=config["OPENAI_API_KEY"])
+
 @app.route("/")
 def index():
     return render_template("index.html")
@@ -44,10 +51,17 @@ def chat():
         print("🔑 OPENAI_API_KEY:", os.getenv("OPENAI_API_KEY"), flush=True)
         print("🔑 GOOGLE_APPLICATION_CREDENTIALS:", os.getenv("GOOGLE_APPLICATION_CREDENTIALS"), flush=True)
 
-        # OpenAI Chat API (v1.0.0以降)
-        response = openai.chat.completions.create(
+        # Use the client to make API calls
+        '''response = openai_client.ChatCompletion.create(
             model="gpt-3.5-turbo",
-            messages=[{"role": "user", "content": user_text}]
+            messages=[{"role": "user", "content": "Hello!"}]
+        )'''
+
+        # OpenAI Chat API (v1.0.0以降)
+        response = openai_client.chat.completions.create(
+            model="gpt-4o-mini", # 3.5-turbo",
+            messages=[{"role": "system", "content": "あなたは老人を元気づける日本語を話す心優しいアシスタントです。"},
+                {"role": "user", "content": user_text}]
         )
         reply_text = response.choices[0].message.content.strip()
         print("🤖 ChatGPT 応答:", reply_text, flush=True)
