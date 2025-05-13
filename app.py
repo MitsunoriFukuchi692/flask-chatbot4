@@ -9,7 +9,7 @@ import dotenv
 #from dotenv import load_dotenv
 from pathlib import Path
 from openai import OpenAI
-secret_fullpath = Path('/etc/secrets/.env')
+secret_fullpath = Path('.env')
 
 # .envファイルから環境変数を読み込み
 config = dotenv.dotenv_values(secret_fullpath)
