@@ -74,13 +74,16 @@ def chat():
         )
         audio_config = texttospeech.AudioConfig(audio_encoding=texttospeech.AudioEncoding.MP3)
         tts_response = tts_client.synthesize_speech(input=synthesis_input, voice=voice, audio_config=audio_config)
-
+        if not os.path.exists("static"):
+            os.makedirs("static")  
+            print("✅ staticフォルダを作成しました。", flush=True)
         output_path = os.path.join("static", "output.mp3")
         with open(output_path, "wb") as out:
             out.write(tts_response.audio_content)
 
-        print("✅ 音声ファイル生成:", output_path, flush=True)
-
+        # print("✅ 音声ファイル生成:", output_path, flush=True)
+        file_size = os.path.getsize(output_path)
+        print("✅ 音声ファイルサイズ:", file_size, "bytes", flush=True) 
         return jsonify({"reply": reply_text})
 
     except Exception as e:
