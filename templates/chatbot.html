@@ -1,52 +1,60 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-    <meta charset="UTF-8">
-    <title>AIチャットボット</title>
+  <meta charset="UTF-8">
+  <title>みまくん Chatbot</title>
+  <style>
+    body { font-family: sans-serif; background-color: #f5f5f5; padding: 20px; }
+    h1 { color: #000; }
+    #chatLog {
+      border: 1px solid #ccc;
+      background: #fff;
+      padding: 10px;
+      width: 100%;
+      height: 300px;
+      overflow-y: auto;
+      margin-bottom: 10px;
+    }
+    .user { font-weight: bold; color: #333; margin: 5px 0; }
+    .bot { margin: 5px 0; background: #e0ffe0; padding: 5px; border-radius: 5px; }
+  </style>
 </head>
 <body>
-    <h2>みまくんとお話ししましょう</h2>
-    <form id="speakForm">
-        <label for="text">話しかけてください：</label><br>
-        <textarea id="text" name="text" rows="4" cols="50"></textarea><br>
-        <button type="submit">送信</button>
-    </form>
+  <h1>みまくん Chatbot</h1>
+  <div id="chatLog"></div>
+  <input type="text" id="userInput" placeholder="メッセージを入力..." style="width:80%;">
+  <button onclick="sendMessage()">送信</button>
+  <br><br>
+  <audio id="audioPlayer" controls style="display:none"></audio>
 
-    <div id="response"></div>
-    <audio id="audioPlayer" controls style="display:none;"></audio>
+  <script>
+    async function sendMessage() {
+      const input = document.getElementById("userInput").value;
+      if (!input.trim()) return;
 
-    <script>
-        document.getElementById("speakForm").addEventListener("submit", function (e) {
-            e.preventDefault();
-            const userInput = document.getElementById("text").value;
+      const chatLog = document.getElementById("chatLog");
+      chatLog.innerHTML += `<div class="user">👤 あなた: ${input}</div>`;
 
-            fetch("/chat", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ text: userInput })
-            })
-            .then(response => response.json())
-            .then(data => {
-                const responseBox = document.getElementById("response");
+      const response = await fetch("/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: input })
+      });
 
-                // 🧑 ユーザー発言
-                responseBox.innerHTML += `<p><strong>🧑 あなた:</strong> ${userInput}</p>`;
+      const data = await response.json();
+      const reply = data.reply;
+      chatLog.innerHTML += `<div class="bot">🤖 みまくん: ${reply}</div>`;
+      chatLog.scrollTop = chatLog.scrollHeight;
 
-                // 🤖 Bot応答
-                responseBox.innerHTML += `<p><strong>🤖 Bot:</strong> ${data.reply}</p>`;
+      // 音声再生
+      const audio = document.getElementById("audioPlayer");
+      const timestamp = new Date().getTime();
+      audio.src = `/static/output.mp3?t=${timestamp}`;
+      audio.style.display = "block";
+      audio.play();
 
-                // 🔊 音声ファイル（キャッシュ防止付き再生）
-                const audio = document.getElementById("audioPlayer");
-                audio.src = "/static/output.mp3?t=" + new Date().getTime();
-                audio.style.display = "block";
-                audio.play();
-            })
-            .catch(error => {
-                console.error("エラー:", error);
-            });
-
-            document.getElementById("text").value = "";
-        });
-    </script>
+      document.getElementById("userInput").value = "";
+    }
+  </script>
 </body>
 </html>
