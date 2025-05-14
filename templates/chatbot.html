@@ -4,42 +4,45 @@
 <head>
     <meta charset="UTF-8">
     <title>みまくん Chatbot</title>
+    <style>
+        body { font-family: sans-serif; margin: 20px; }
+        #chatLog { border: 1px solid #ccc; padding: 10px; height: 300px; overflow-y: auto; white-space: pre-wrap; }
+        .user { font-weight: bold; margin-top: 10px; }
+        .bot { color: green; margin-bottom: 10px; }
+    </style>
 </head>
 <body>
     <h1>みまくん Chatbot</h1>
-    <div id="chatLog" style="border:1px solid #ccc; padding:10px; width:100%; height:200px; overflow:auto;"></div>
-    <input type="text" id="userInput" placeholder="メッセージを入力..." style="width:80%;">
+    <div id="chatLog"></div>
+    <input type="text" id="userInput" placeholder="メッセージを入力..." style="width: 70%;">
     <button onclick="sendMessage()">送信</button>
     <br><br>
-    <!-- 音声再生プレイヤー -->
-    <audio id="audioPlayer" controls style="display: block;" src="/static/output.mp3"></audio>
+    <audio id="audioPlayer" controls style="display: none;"></audio>
+
     <script>
-        function sendMessage() {
+        async function sendMessage() {
             const input = document.getElementById("userInput").value;
-            if (!input.trim()) return;
+            if (!input) return;
+            const log = document.getElementById("chatLog");
+            log.innerHTML += "\n👤 あなた: " + input;
 
-            const chatLog = document.getElementById("chatLog");
+            try {
+                const response = await fetch("/chat", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ text: input })
+                });
 
-            // ユーザーの発言を表示
-            chatLog.innerHTML += `<p><strong>あなた:</strong> ${input}</p>`;
+                const data = await response.json();
+                log.innerHTML += "\n🤖 みまくん: " + data.reply;
+                document.getElementById("audioPlayer").src = "/static/output.mp3?t=" + Date.now();
+                document.getElementById("audioPlayer").play();
+            } catch (e) {
+                log.innerHTML += "\n⚠️ エラーが発生しました。";
+                console.error(e);
+            }
 
-            fetch("/chat", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ text: input })
-            })
-            .then(response => response.json())
-            .then(data => {
-                chatLog.innerHTML += `<p><strong>みまくん:</strong> ${data.reply}</p>`;
-                const audioPlayer = document.getElementById("audioPlayer");
-                audioPlayer.src = `/static/output.mp3?t=${Date.now()}`;
-                audioPlayer.play();
-                document.getElementById("userInput").value = "";
-            })
-            .catch(error => {
-                chatLog.innerHTML += `<p style="color:red;">エラーが発生しました。</p>`;
-                console.error("通信エラー:", error);
-            });
+            document.getElementById("userInput").value = "";
         }
     </script>
 </body>

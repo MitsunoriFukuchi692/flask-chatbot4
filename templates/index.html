@@ -1,51 +1,12 @@
+
 <!DOCTYPE html>
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>音声合成テスト</title>
+    <title>ロボ・スタディ株式会社</title>
 </head>
 <body>
-    <h2>音声合成テスト</h2>
-    <form id="speakForm">
-        <label for="text">読み上げたいテキストを入力してください：</label><br>
-        <textarea id="text" name="text" rows="4" cols="50"></textarea><br>
-        <button type="submit">音声を再生</button>
-    </form>
-
-    <!-- 応答表示 -->
-    <p id="response"></p>
-
-    <!-- 音声再生用プレーヤー -->
-    <audio id="audioPlayer" controls style="display:none;"></audio>
-
-    <!-- HTMLファイルの末尾に置いてください -->
-<script>
-document.addEventListener("DOMContentLoaded", function () {
-    document.getElementById("speakForm").addEventListener("submit", function (e) {
-        e.preventDefault();
-        const text = document.getElementById("text").value;
-
-        fetch("/chat", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({ text: text })
-        })
-        .then(response => response.json())
-        .then(data => {
-            document.getElementById("response").innerText = "Bot: " + data.response_text;
-            const audio = document.getElementById("audioPlayer");
-            audio.src = "/static/output.mp3?t=" + new Date().getTime();  // キャッシュ防止
-            audio.style.display = "block";
-            audio.play();
-        })
-        .catch(error => {
-            console.error("エラー:", error);
-        });
-    });
-});
-</script>
-
+    <h1>ロボ・スタディ株式会社へようこそ</h1>
+    <p><a href="/chatbot">▶ みまくん Chatbot を開く</a></p>
 </body>
 </html>
