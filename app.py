@@ -1,6 +1,7 @@
 import os
 import json
 from flask import Flask, render_template, request, jsonify
+from flask_cors import CORS
 from google.cloud import texttospeech
 from pathlib import Path
 from openai import OpenAI
@@ -32,6 +33,7 @@ def chatbot():
     return render_template("chatbot.html")
 
 @app.route("/chat", methods=["POST"])
+@cross_origin(origins=["https://robostudy.jp", "http://localhost:10000"])
 def chat():
     try:
         print("📥 RAW REQUEST:", request.data, flush=True)
