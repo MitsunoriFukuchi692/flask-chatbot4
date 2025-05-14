@@ -12,7 +12,7 @@
         <button type="submit">送信</button>
     </form>
 
-    <p id="response"></p>
+    <div id="response"></div>
     <audio id="audioPlayer" controls style="display:none;"></audio>
 
     <script>
@@ -27,8 +27,9 @@
             })
             .then(response => response.json())
             .then(data => {
-                // 🟢 ChatGPTの返答を表示
-                document.getElementById("response").innerText = "Bot: " + data.reply;
+                // 🟢 返答履歴として追加表示
+                const responseBox = document.getElementById("response");
+                responseBox.innerHTML += `<p><strong>Bot:</strong> ${data.reply}</p>`;
 
                 // 🔊 音声ファイル再生
                 const audio = document.getElementById("audioPlayer");
@@ -39,6 +40,9 @@
             .catch(error => {
                 console.error("エラー:", error);
             });
+
+            // 入力欄をクリア
+            document.getElementById("text").value = "";
         });
     </script>
 </body>
