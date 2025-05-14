@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>AIチャットボット</title>
+</head>
+<body>
+    <h2>みまくんとお話ししましょう</h2>
+    <form id="speakForm">
+        <label for="text">話しかけてください：</label><br>
+        <textarea id="text" name="text" rows="4" cols="50"></textarea><br>
+        <button type="submit">送信</button>
+    </form>
+
+    <div id="response"></div>
+    <audio id="audioPlayer" controls style="display:none;"></audio>
+
+    <script>
+        document.getElementById("speakForm").addEventListener("submit", function (e) {
+            e.preventDefault();
+            const userInput = document.getElementById("text").value;
+
+            fetch("https://flask-chatbot4.onrender.com", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ text: userInput })
+            })
+            .then(response => response.json())
+            .then(data => {
+                // 🟢 テキスト履歴を追加
+                const responseBox = document.getElementById("response");
+                responseBox.innerHTML += `<p><strong>Bot:</strong> ${data.reply}</p>`;
+
+                // 🔊 音声ファイルのキャッシュ防止付き再生
+                const audio = document.getElementById("audioPlayer");
+                audio.src = "/static/output.mp3?t=" + new Date().getTime();
+                audio.style.display = "block";
+                audio.play();
+            })
+            .catch(error => {
+                console.error("エラー:", error);
+            });
+
+            // 入力欄クリア
+            document.getElementById("text").value = "";
+        });
+    </script>
+</body>
+</html>
