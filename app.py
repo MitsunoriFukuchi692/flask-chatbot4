@@ -24,10 +24,6 @@ openai_client = OpenAI(api_key=openai_api_key)
 # Flask アプリ作成
 app = Flask(__name__)
 
-@app.route("/")
-def index():
-    return render_template("index.html")
-
 @app.route("/chatbot")
 def chatbot():
     return render_template("chatbot.html")
