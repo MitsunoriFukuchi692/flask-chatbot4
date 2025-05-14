@@ -27,11 +27,15 @@
             })
             .then(response => response.json())
             .then(data => {
-                // 🟢 テキスト履歴を追加
                 const responseBox = document.getElementById("response");
-                responseBox.innerHTML += `<p><strong>Bot:</strong> ${data.reply}</p>`;
 
-                // 🔊 音声ファイルのキャッシュ防止付き再生
+                // 🧑 ユーザー発言
+                responseBox.innerHTML += `<p><strong>🧑 あなた:</strong> ${userInput}</p>`;
+
+                // 🤖 Bot応答
+                responseBox.innerHTML += `<p><strong>🤖 Bot:</strong> ${data.reply}</p>`;
+
+                // 🔊 音声ファイル（キャッシュ防止付き再生）
                 const audio = document.getElementById("audioPlayer");
                 audio.src = "/static/output.mp3?t=" + new Date().getTime();
                 audio.style.display = "block";
@@ -41,7 +45,6 @@
                 console.error("エラー:", error);
             });
 
-            // 入力欄クリア
             document.getElementById("text").value = "";
         });
     </script>
