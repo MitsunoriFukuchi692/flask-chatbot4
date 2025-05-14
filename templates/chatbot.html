@@ -27,13 +27,13 @@
             })
             .then(response => response.json())
             .then(data => {
-                // 🟢 返答履歴として追加表示
+                // 🟢 テキスト履歴を追加
                 const responseBox = document.getElementById("response");
                 responseBox.innerHTML += `<p><strong>Bot:</strong> ${data.reply}</p>`;
 
-                // 🔊 音声ファイル再生
+                // 🔊 音声ファイルのキャッシュ防止付き再生
                 const audio = document.getElementById("audioPlayer");
-                audio.src = "/static/output.mp3";
+                audio.src = "/static/output.mp3?t=" + new Date().getTime();
                 audio.style.display = "block";
                 audio.play();
             })
@@ -41,7 +41,7 @@
                 console.error("エラー:", error);
             });
 
-            // 入力欄をクリア
+            // 入力欄クリア
             document.getElementById("text").value = "";
         });
     </script>
