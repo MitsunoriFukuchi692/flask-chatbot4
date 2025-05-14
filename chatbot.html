@@ -20,7 +20,7 @@
             e.preventDefault();
             const userInput = document.getElementById("text").value;
 
-            fetch("https://flask-chatbot4.onrender.com", {
+            fetch("https://flask-chatbot4.onrender.com/chat", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ text: userInput })
@@ -33,7 +33,7 @@
 
                 // 🔊 音声ファイルのキャッシュ防止付き再生
                 const audio = document.getElementById("audioPlayer");
-                audio.src = "/static/output.mp3?t=" + new Date().getTime();
+                audio.src = "https://flask-chatbot4.onrender.com/static/output.mp3?t=" + new Date().getTime(); // changed from root ("/static/...) to absolute URL
                 audio.style.display = "block";
                 audio.play();
             })
