@@ -1,36 +1,31 @@
-
 import os
 import json
 from flask import Flask, render_template, request, jsonify
+from flask_cors import CORS
 from google.cloud import texttospeech
 from openai import OpenAI
 from pathlib import Path
 import dotenv
-from flask_cors import CORS
-
-app = Flask(__name__)
-CORS(app, origins=["https://robostudy.jp"])  
 
 # .env の読み込み
 dotenv.load_dotenv()
 
+# Flask アプリと CORS の設定
 app = Flask(__name__)
+CORS(app, origins=["https://robostudy.jp"])
 
+# 環境変数の確認
 openai_api_key = os.getenv("OPENAI_API_KEY")
 google_application_credentials = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
-assert openai_api_key, "OpenAI API key is not set"
-assert google_application_credentials, "Google Cloud credentials are not set"
 
+assert openai_api_key, "OpenAI API key is not set in environment variables."
+assert google_application_credentials, "Google Cloud credentials are not set in environment variables."
+
+print("\U0001F511 OPENAI_API_KEY:", openai_api_key, flush=True)
+print("\U0001F511 GOOGLE_APPLICATION_CREDENTIALS:", google_application_credentials, flush=True)
+
+# OpenAI クライアントの初期化
 openai_client = OpenAI(api_key=openai_api_key)
-
-# 会社・製品FAQ（簡易ルール）
-faq_responses = {
-    "ロボスタディ": "ロボ・スタディ株式会社は、高齢者の孤独や孤独死の問題解決を目指して、AI対話ロボット『AI・みまくん』を開発しています。",
-    "会社概要": "当社は2018年に設立され、浜松市に本社を構えています。詳細は https://robostudy.jp をご覧ください。",
-    "みまくん": "『AI・みまくん』は高齢者の孤独感を軽減し、日常生活を支援するための見守り対話ロボットです。",
-    "価格": "『AI・みまくん』の価格は198,000円（税込）です。サブスク（月額4,200円）もあります。法人向けは別途管理費がかかります。",
-    "購入方法": "ご購入はWebサイト（https://robostudy.jp）またはメール mitsunorif@robostudy.jp までご連絡ください。"
-}
 
 @app.route("/")
 def index():
@@ -43,25 +38,24 @@ def chatbot():
 @app.route("/chat", methods=["POST"])
 def chat():
     try:
+        print("\U0001F4E5 RAW REQUEST:", request.data, flush=True)
         data = json.loads(request.data)
         user_text = data.get("text", "").strip()
 
-        # FAQ自動応答
-        for keyword, answer in faq_responses.items():
-            if keyword in user_text:
-                return jsonify({"reply": answer})
+        print("\u2705 USER TEXT:", user_text, flush=True)
 
-        # ChatGPT 応答
+        # OpenAI Chat API
         response = openai_client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[
-                {"role": "system", "content": "あなたは老人を元気づける日本語を話す心優しいアシスタントです。"},
+                {"role": "system", "content": "あなたは老人を元気づける日本語を話す心優しいアシスタントです。会社名はロボ・スタディ株式会社、製品名はAIみまくんです。会社や製品に関する質問には簡潔に正確に答えてください。"},
                 {"role": "user", "content": user_text}
             ]
         )
         reply_text = response.choices[0].message.content.strip()
+        print("\U0001F916 ChatGPT 応答:", reply_text, flush=True)
 
-        # 音声合成
+        # Google Cloud TTS
         tts_client = texttospeech.TextToSpeechClient()
         synthesis_input = texttospeech.SynthesisInput(text=reply_text)
         voice = texttospeech.VoiceSelectionParams(
@@ -69,20 +63,21 @@ def chat():
             ssml_gender=texttospeech.SsmlVoiceGender.NEUTRAL
         )
         audio_config = texttospeech.AudioConfig(audio_encoding=texttospeech.AudioEncoding.MP3)
-        tts_response = tts_client.synthesize_speech(
-            input=synthesis_input, voice=voice, audio_config=audio_config
-        )
+        tts_response = tts_client.synthesize_speech(input=synthesis_input, voice=voice, audio_config=audio_config)
 
+        # static/output.mp3 に保存
         if not os.path.exists("static"):
             os.makedirs("static")
+            print("\u2705 staticフォルダを作成しました。", flush=True)
         output_path = os.path.join("static", "output.mp3")
         with open(output_path, "wb") as out:
             out.write(tts_response.audio_content)
 
+        print("\u2705 音声ファイルサイズ:", os.path.getsize(output_path), "bytes", flush=True)
         return jsonify({"reply": reply_text})
 
     except Exception as e:
-        print("⚠️ Error:", str(e), flush=True)
+        print("\u26A0\uFE0F 全体の処理エラー:", str(e), flush=True)
         return jsonify({"reply": "エラーが発生しました。"}), 500
 
 if __name__ == "__main__":
