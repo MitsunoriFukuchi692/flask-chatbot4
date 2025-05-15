@@ -9,7 +9,7 @@ import dotenv
 from flask_cors import CORS
 
 app = Flask(__name__)
-CORS(app)
+CORS(app, origins=["https://robostudy.jp"])  
 
 # .env の読み込み
 dotenv.load_dotenv()
