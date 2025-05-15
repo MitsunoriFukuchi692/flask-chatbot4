@@ -6,6 +6,10 @@ from google.cloud import texttospeech
 from openai import OpenAI
 from pathlib import Path
 import dotenv
+from flask_cors import CORS
+
+app = Flask(__name__)
+CORS(app)
 
 # .env の読み込み
 dotenv.load_dotenv()
