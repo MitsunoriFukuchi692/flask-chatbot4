@@ -2,48 +2,124 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-    <meta charset="UTF-8">
-    <title>みまくん Chatbot</title>
-    <style>
-        body { font-family: sans-serif; margin: 20px; }
-        #chatLog { border: 1px solid #ccc; padding: 10px; height: 300px; overflow-y: auto; white-space: pre-wrap; }
-        .user { font-weight: bold; margin-top: 10px; }
-        .bot { color: green; margin-bottom: 10px; }
-    </style>
+  <meta charset="UTF-8">
+  <title>みまくん Chatbot</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      background-color: #ffffff;
+      margin: 0;
+      padding: 1rem;
+    }
+    h2 {
+      font-size: 1.2rem;
+      margin-bottom: 1rem;
+      text-align: center;
+    }
+    #chatLog {
+      border: 1px solid #ccc;
+      padding: 10px;
+      width: 100%;
+      height: 300px;
+      overflow-y: auto;
+      margin-bottom: 10px;
+    }
+    .message {
+      padding: 8px 12px;
+      border-radius: 10px;
+      margin: 5px;
+      max-width: 80%;
+      display: inline-block;
+      clear: both;
+    }
+    .user {
+      background-color: #e0f7fa;
+      float: right;
+      text-align: right;
+    }
+    .bot {
+      background-color: #f1f8e9;
+      float: left;
+    }
+    #userInput {
+      width: 60%;
+      padding: 0.5rem;
+      font-size: 1rem;
+    }
+    button {
+      padding: 0.5rem 1rem;
+      font-size: 1rem;
+      margin-left: 0.5rem;
+    }
+    #buttons {
+      margin-top: 0.5rem;
+    }
+  </style>
 </head>
 <body>
-    <h1>みまくん Chatbot</h1>
-    <div id="chatLog"></div>
-    <input type="text" id="userInput" placeholder="メッセージを入力..." style="width: 70%;">
+  <h2>みまくん Chatbot</h2>
+  <div id="chatLog"></div>
+  <input type="text" id="userInput" placeholder="メッセージを入力...">
+  <div id="buttons">
     <button onclick="sendMessage()">送信</button>
-    <br><br>
-    <audio id="audioPlayer" controls style="display: none;"></audio>
+    <button onclick="startSpeechRecognition()">🎤 音声入力</button>
+  </div>
+  <audio id="audioPlayer" controls style="display: block; margin-top: 1rem;"></audio>
 
-    <script>
-        async function sendMessage() {
-            const input = document.getElementById("userInput").value;
-            if (!input) return;
-            const log = document.getElementById("chatLog");
-            log.innerHTML += "\n👤 あなた: " + input;
+  <script>
+    const chatLog = document.getElementById("chatLog");
+    const userInput = document.getElementById("userInput");
+    const audioPlayer = document.getElementById("audioPlayer");
 
-            try {
-                const response = await fetch("/chat", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ text: input })
-                });
+    function appendMessage(text, sender) {
+      const p = document.createElement("div");
+      p.className = "message " + (sender === "あなた" ? "user" : "bot");
+      p.innerText = text;
+      chatLog.appendChild(p);
+      chatLog.scrollTop = chatLog.scrollHeight;
+    }
 
-                const data = await response.json();
-                log.innerHTML += "\n🤖 みまくん: " + data.reply;
-                document.getElementById("audioPlayer").src = "/static/output.mp3?t=" + Date.now();
-                document.getElementById("audioPlayer").play();
-            } catch (e) {
-                log.innerHTML += "\n⚠️ エラーが発生しました。";
-                console.error(e);
-            }
+    async function sendMessage() {
+      const text = userInput.value.trim();
+      if (!text) return;
 
-            document.getElementById("userInput").value = "";
-        }
-    </script>
+      appendMessage(text, "あなた");
+      userInput.value = "";
+
+      const res = await fetch("https://flask-chatbot4.onrender.com/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text })
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        appendMessage(data.reply, "みまくん");
+        audioPlayer.src = `https://flask-chatbot4.onrender.com/static/output.mp3?t=${Date.now()}`;
+        audioPlayer.play();
+      } else {
+        appendMessage("エラーが発生しました。", "みまくん");
+      }
+    }
+
+    function startSpeechRecognition() {
+      const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+      recognition.lang = "ja-JP";
+      recognition.interimResults = false;
+      recognition.maxAlternatives = 1;
+
+      recognition.onresult = (event) => {
+        const transcript = event.results[0][0].transcript;
+        userInput.value = transcript;
+        sendMessage();
+      };
+
+      recognition.onerror = (event) => {
+        alert("音声認識エラー: " + event.error);
+      };
+
+      recognition.start();
+    }
+  </script>
 </body>
 </html>
