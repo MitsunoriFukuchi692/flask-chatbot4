@@ -1,8 +1,8 @@
-
 <!DOCTYPE html>
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>みまくん Chatbot</title>
   <style>
     body {
@@ -10,9 +10,12 @@
       background-color: #ffffff;
       margin: 0;
       padding: 1rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
     }
     h2 {
-      font-size: 1.2rem;
+      font-size: 1.5rem;
       margin-bottom: 1rem;
       text-align: center;
     }
@@ -20,39 +23,36 @@
       border: 1px solid #ccc;
       padding: 10px;
       width: 100%;
+      max-width: 600px;
       height: 300px;
       overflow-y: auto;
       margin-bottom: 10px;
-    }
-    .message {
-      padding: 8px 12px;
-      border-radius: 10px;
-      margin: 5px;
-      max-width: 80%;
-      display: inline-block;
-      clear: both;
-    }
-    .user {
-      background-color: #e0f7fa;
-      float: right;
-      text-align: right;
-    }
-    .bot {
-      background-color: #f1f8e9;
-      float: left;
+      background-color: #f9f9f9;
     }
     #userInput {
-      width: 60%;
+      width: 100%;
+      max-width: 600px;
       padding: 0.5rem;
       font-size: 1rem;
+      box-sizing: border-box;
+    }
+    #buttons {
+      display: flex;
+      justify-content: center;
+      margin-top: 0.5rem;
+      gap: 10px;
+      flex-wrap: wrap;
     }
     button {
       padding: 0.5rem 1rem;
       font-size: 1rem;
-      margin-left: 0.5rem;
+      flex: 1;
+      min-width: 120px;
     }
-    #buttons {
-      margin-top: 0.5rem;
+    audio {
+      width: 100%;
+      max-width: 600px;
+      margin-top: 1rem;
     }
   </style>
 </head>
@@ -64,7 +64,7 @@
     <button onclick="sendMessage()">送信</button>
     <button onclick="startSpeechRecognition()">🎤 音声入力</button>
   </div>
-  <audio id="audioPlayer" controls style="display: block; margin-top: 1rem;"></audio>
+  <audio id="audioPlayer" controls></audio>
 
   <script>
     const chatLog = document.getElementById("chatLog");
@@ -72,9 +72,8 @@
     const audioPlayer = document.getElementById("audioPlayer");
 
     function appendMessage(text, sender) {
-      const p = document.createElement("div");
-      p.className = "message " + (sender === "あなた" ? "user" : "bot");
-      p.innerText = text;
+      const p = document.createElement("p");
+      p.innerHTML = `<strong>${sender}:</strong> ${text}`;
       chatLog.appendChild(p);
       chatLog.scrollTop = chatLog.scrollHeight;
     }
