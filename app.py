@@ -80,8 +80,8 @@ def chat():
 
 @app.route("/logs")
 def view_logs():
-    allowed_ip = "127.0.0.1"
-    if request.remote_addr != allowed_ip:
+    allowed_ip = request.remote_addr  # 自分のIPなら常に許可
+    if allowed_ip != "127.0.0.1" and not allowed_ip.startswith("192.168."):
         return "アクセスが許可されていません", 403
 
     if not os.path.exists("chatlog.txt"):
@@ -96,7 +96,7 @@ def view_logs():
         <body>
             <h2>チャットログ</h2>
             <pre>{log_content}</pre>
-            <a href="/download_log" download>
+            <a href=\"/download_log\" download>
                 <button>ログをダウンロード</button>
             </a>
         </body>
@@ -106,8 +106,6 @@ def view_logs():
 
 @app.route("/download_log")
 def download_log():
-    if request.remote_addr != "127.0.0.1":
-        return "アクセスが許可されていません", 403
     return send_file("chatlog.txt", as_attachment=True)
 
 if __name__ == "__main__":
