@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>みまくん Chatbot</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      text-align: center;
+      margin: 0;
+      padding: 0;
+      background-color: #f9f9f9;
+    }
+    h1 {
+      font-size: 1.2rem;
+      margin: 1rem 0;
+    }
+    iframe {
+      width: 90vw;
+      height: 70vh;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+    }
+    .controls {
+      margin-top: 1rem;
+    }
+    button {
+      padding: 0.6rem 1.2rem;
+      font-size: 1rem;
+      margin: 0 0.5rem;
+      border: none;
+      border-radius: 6px;
+      background-color: #007BFF;
+      color: white;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <h1>みまくん Chatbot</h1>
+  <iframe id="chatFrame" src="https://flask-chatbot4.onrender.com/chatbot" allow="microphone" allowfullscreen></iframe>
+  <div class="controls">
+    <button onclick="startRecognition()">🎤 音声入力</button>
+    <button onclick="focusChatInput()">✏️ テキスト入力</button>
+  </div>
+  <p style="font-size: 0.9em; color: gray;">※ 音が小さい場合は、PC側の音量を調整してください。</p>
+
+  <script>
+    function startRecognition() {
+      const iframe = document.getElementById("chatFrame").contentWindow;
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRecognition) {
+        alert("このブラウザは音声認識に対応していません。");
+        return;
+      }
+      const recognition = new SpeechRecognition();
+      recognition.lang = 'ja-JP';
+      recognition.interimResults = false;
+      recognition.maxAlternatives = 1;
+
+      recognition.start();
+
+      recognition.onresult = function(event) {
+        const text = event.results[0][0].transcript;
+        iframe.postMessage({ type: "speechInput", text }, "*");
+      };
+
+      recognition.onerror = function(event) {
+        alert("音声認識エラー: " + event.error);
+      };
+    }
+
+    function focusChatInput() {
+      const iframe = document.getElementById("chatFrame").contentWindow;
+      iframe.postMessage({ type: "focusInput" }, "*");
+    }
+
+    // メッセージ受信（必要なら）
+    window.addEventListener("message", (event) => {
+      if (event.origin !== "https://flask-chatbot4.onrender.com") return;
+      // 追加の通信処理があればここに記述
+    });
+  </script>
+</body>
+</html>

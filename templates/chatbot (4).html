@@ -1,0 +1,75 @@
+
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>みまくん Chatbot</title>
+  <style>
+    body { font-family: sans-serif; margin: 0; padding: 0; }
+    h1 { background: #eee; padding: 10px; margin: 0; text-align: center; }
+    #chatLog { height: 400px; overflow-y: auto; padding: 10px; border-bottom: 1px solid #ccc; }
+    .user { font-weight: bold; color: #222; margin-top: 10px; }
+    .bot { color: #333; margin-left: 10px; }
+    .inputArea { display: flex; flex-direction: column; padding: 10px; }
+    #userInput { width: 100%; padding: 8px; margin-bottom: 5px; }
+    button { padding: 8px; margin-top: 4px; }
+    @media (max-width: 600px) {
+      #chatLog { height: 300px; }
+      button { font-size: 16px; }
+    }
+  </style>
+</head>
+<body>
+  <h1>みまくん Chatbot</h1>
+  <div id="chatLog"></div>
+  <div class="inputArea">
+    <input type="text" id="userInput" placeholder="メッセージを入力..." />
+    <button onclick="sendMessage()">送信</button>
+    <button onclick="startRecognition()">🎤 音声入力</button>
+    <audio id="audioPlayer" controls style="margin-top:10px;"></audio>
+  </div>
+
+  <script>
+    const chatLog = document.getElementById("chatLog");
+    const userInput = document.getElementById("userInput");
+    const audioPlayer = document.getElementById("audioPlayer");
+
+    function appendMessage(sender, text) {
+      const p = document.createElement("p");
+      p.innerHTML = "<span class='" + sender + "'>" + (sender === "user" ? "あなた" : "みまくん") + ":</span> " + text;
+      chatLog.appendChild(p);
+      chatLog.scrollTop = chatLog.scrollHeight;
+    }
+
+    async function sendMessage() {
+      const text = userInput.value.trim();
+      if (!text) return;
+      appendMessage("user", text);
+      userInput.value = "";
+
+      try {
+        const res = await fetch("/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text }),
+        });
+        const data = await res.json();
+        appendMessage("bot", data.reply);
+        if (data.audio_url) audioPlayer.src = data.audio_url;
+      } catch (e) {
+        appendMessage("bot", "エラーが発生しました。");
+      }
+    }
+
+    function startRecognition() {
+      const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+      recognition.lang = "ja-JP";
+      recognition.onresult = function (event) {
+        userInput.value = event.results[0][0].transcript;
+      };
+      recognition.start();
+    }
+  </script>
+</body>
+</html>
