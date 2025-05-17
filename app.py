@@ -1,24 +1,22 @@
 
 import os
 import json
-from flask import Flask, render_template, request, jsonify, send_file
-from flask_cors import CORS
+from flask import Flask, render_template, request, jsonify, send_from_directory
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
+from flask_cors import CORS
 from google.cloud import texttospeech
-from openai import OpenAI
-from datetime import datetime
+import openai
+
+# 環境変数の読み込み
+openai.api_key = os.getenv("OPENAI_API_KEY")
+google_credentials = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
+os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = google_credentials
 
 app = Flask(__name__)
 CORS(app, origins=["https://robostudy.jp"])
 
-limiter = Limiter(get_remote_address, app=app, default_limits=["5 per minute"])
-
-openai_api_key = os.getenv("OPENAI_API_KEY")
-google_credentials = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
-assert openai_api_key, "OpenAI API key not set"
-assert google_credentials, "Google credentials not set"
-client = OpenAI(api_key=openai_api_key)
+limiter = Limiter(get_remote_address, app=app, default_limits=["10 per minute"])
 
 @app.route("/")
 def index():
@@ -28,53 +26,63 @@ def index():
 def chatbot():
     return render_template("chatbot.html")
 
-@app.route("/logs")
-def logs():
-    return render_template("logs.html")
-
-@app.route("/chatlog.txt")
-def download_log():
-    return send_file("chatlog.txt", as_attachment=True)
-
 @app.route("/chat", methods=["POST"])
-@limiter.limit("1 per second")
+@limiter.limit("5 per minute")
 def chat():
     try:
         data = json.loads(request.data)
         user_text = data.get("text", "").strip()
 
         if len(user_text) > 100:
-            return jsonify({"reply": "申し訳ありませんが、メッセージは100文字以内でお願いいたします。再度短くして送信してください。"})
+            return jsonify({"reply": "みまくん: 申し訳ありませんが、メッセージは100文字以内でお願いいたします。再度短くして送信してください。"})
 
-        response = client.chat.completions.create(
+        messages = [
+            {"role": "system", "content": "あなたは高齢者の話し相手になる、やさしい日本語で答えるアシスタントです。"},
+            {"role": "user", "content": user_text}
+        ]
+
+        response = openai.ChatCompletion.create(
             model="gpt-4o",
-            messages=[
-                {"role": "system", "content": "あなたは高齢者を優しく励ます日本語のアシスタントです。返答は200文字以内にしてください。"},
-                {"role": "user", "content": user_text}
-            ]
+            messages=messages
         )
-        reply_text = response.choices[0].message.content.strip()[:200]
+
+        reply_text = response.choices[0].message.content.strip()
+        if len(reply_text) > 200:
+            reply_text = reply_text[:200] + "..."
 
         tts_client = texttospeech.TextToSpeechClient()
         synthesis_input = texttospeech.SynthesisInput(text=reply_text)
-        voice = texttospeech.VoiceSelectionParams(language_code="ja-JP", ssml_gender=texttospeech.SsmlVoiceGender.NEUTRAL)
+        voice = texttospeech.VoiceSelectionParams(
+            language_code="ja-JP",
+            ssml_gender=texttospeech.SsmlVoiceGender.NEUTRAL
+        )
         audio_config = texttospeech.AudioConfig(audio_encoding=texttospeech.AudioEncoding.MP3)
-        tts_response = tts_client.synthesize_speech(input=synthesis_input, voice=voice, audio_config=audio_config)
 
-        os.makedirs("static", exist_ok=True)
+        tts_response = tts_client.synthesize_speech(
+            input=synthesis_input,
+            voice=voice,
+            audio_config=audio_config
+        )
+
+        if not os.path.exists("static"):
+            os.makedirs("static")
+
         output_path = os.path.join("static", "output.mp3")
         with open(output_path, "wb") as out:
             out.write(tts_response.audio_content)
 
-        timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        with open("chatlog.txt", "a", encoding="utf-8") as log:
-            log.write(f"{timestamp}\nあなた: {user_text}\nみまくん: {reply_text}\n\n")
+        # 会話ログの保存
+        with open("chatlog.txt", "a", encoding="utf-8") as log_file:
+            log_file.write(f"👤 User: {user_text}\n🤖 Mima-kun: {reply_text}\n---\n")
 
         return jsonify({"reply": reply_text})
 
     except Exception as e:
-        print("⚠️ エラー:", str(e), flush=True)
-        return jsonify({"reply": "みまくん: エラーが発生しました。"}), 500
+        return jsonify({"reply": f"エラーが発生しました: {str(e)}"}), 500
+
+@app.route("/logs")
+def get_logs():
+    return send_from_directory(directory=".", path="chatlog.txt", as_attachment=False)
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=10000)
