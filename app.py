@@ -1,111 +1,66 @@
-import os
-import json
-from flask import Flask, render_template, request, jsonify, send_file, Response
-from google.cloud import texttospeech
-import dotenv
-from pathlib import Path
-from openai import OpenAI
-from flask_cors import CORS
 
-# .env 読み込み
-dotenv.load_dotenv()
-config = dotenv.dotenv_values(Path(".env"))
+import os
+from flask import Flask, request, jsonify, render_template, send_file
+from flask_cors import CORS
+from datetime import datetime
+import json
+from openai import OpenAI
+from google.cloud import texttospeech
 
 app = Flask(__name__)
-CORS(app, resources={r"/chat": {"origins": "*"}})  # CORS設定を限定URLに適用
+CORS(app)  # CORS対応
 
-# OpenAIとGoogle Cloudの認証情報取得
-openai_api_key = os.getenv("OPENAI_API_KEY")
-google_application_credentials = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
-assert openai_api_key, "OpenAI API key is missing."
-assert google_application_credentials, "Google Cloud credentials missing."
-
-# OpenAI client初期化
-openai_client = OpenAI(api_key=openai_api_key)
-
-@app.route("/")
-def index():
-    return render_template("index.html")
-
-@app.route("/chatbot")
-def chatbot():
-    return render_template("chatbot.html")
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 @app.route("/chat", methods=["POST"])
 def chat():
     try:
         data = request.get_json()
         user_text = data.get("text", "").strip()
+        if not user_text:
+            return jsonify({"reply": "メッセージが空です。"}), 400
 
         # ChatGPT 応答生成
-        response = openai_client.chat.completions.create(
-            model="gpt-4o-mini",
+        response = client.chat.completions.create(
+            model="gpt-4o",
             messages=[
-                {"role": "system", "content": "あなたは高齢者を元気づける、親切な日本語アシスタントです。"},
+                {"role": "system", "content": "あなたは親切で丁寧な会社案内チャットボットです。"},
                 {"role": "user", "content": user_text}
             ]
         )
-        reply_text = response.choices[0].message.content.strip()
+        reply = response.choices[0].message.content.strip()
 
-        # Google TTSで音声合成
+        # Google TTS 音声生成
         tts_client = texttospeech.TextToSpeechClient()
-        synthesis_input = texttospeech.SynthesisInput(text=reply_text)
-        voice = texttospeech.VoiceSelectionParams(
-            language_code="ja-JP",
-            ssml_gender=texttospeech.SsmlVoiceGender.NEUTRAL
-        )
+        synthesis_input = texttospeech.SynthesisInput(text=reply)
+        voice = texttospeech.VoiceSelectionParams(language_code="ja-JP", ssml_gender=texttospeech.SsmlVoiceGender.NEUTRAL)
         audio_config = texttospeech.AudioConfig(audio_encoding=texttospeech.AudioEncoding.MP3)
+        tts_response = tts_client.synthesize_speech(input=synthesis_input, voice=voice, audio_config=audio_config)
 
-        tts_response = tts_client.synthesize_speech(
-            input=synthesis_input,
-            voice=voice,
-            audio_config=audio_config
-        )
-
-        if not os.path.exists("static"):
-            os.makedirs("static")
-        output_path = os.path.join("static", "output.mp3")
-        with open(output_path, "wb") as out:
+        os.makedirs("static", exist_ok=True)
+        with open("static/output.mp3", "wb") as out:
             out.write(tts_response.audio_content)
 
-        # ログ記録
+        # ログ保存
         with open("chatlog.txt", "a", encoding="utf-8") as f:
-            f.write(f"User: {user_text}\nBot: {reply_text}\n\n")
+            f.write(f"[{datetime.now()}] ユーザー: {user_text}\nみまくん: {reply}\n\n")
 
-        return jsonify({"reply": reply_text})
+        return jsonify({"reply": reply})
 
     except Exception as e:
-        print("⚠️ エラー:", str(e))
-        return jsonify({"reply": "エラーが発生しました。"}), 500
+        return jsonify({"reply": f"エラーが発生しました: {str(e)}"}), 500
 
 @app.route("/logs")
 def view_logs():
-    allowed_ip = request.remote_addr  # 自分のIPなら常に許可
-    if allowed_ip != "127.0.0.1" and not allowed_ip.startswith("192.168."):
-        return "アクセスが許可されていません", 403
+    try:
+        with open("chatlog.txt", "r", encoding="utf-8") as f:
+            log_content = f.read()
+        return f"<pre>{log_content}</pre><br><a href='/download-logs'>📥 ログをダウンロード</a>"
+    except Exception as e:
+        return f"ログ読み込みエラー: {str(e)}"
 
-    if not os.path.exists("chatlog.txt"):
-        return "ログファイルが存在しません。"
-
-    with open("chatlog.txt", "r", encoding="utf-8") as file:
-        log_content = file.read()
-
-    html = f"""
-    <html>
-        <head><title>チャットログ表示</title></head>
-        <body>
-            <h2>チャットログ</h2>
-            <pre>{log_content}</pre>
-            <a href=\"/download_log\" download>
-                <button>ログをダウンロード</button>
-            </a>
-        </body>
-    </html>
-    """
-    return Response(html, mimetype="text/html")
-
-@app.route("/download_log")
-def download_log():
+@app.route("/download-logs")
+def download_logs():
     return send_file("chatlog.txt", as_attachment=True)
 
 if __name__ == "__main__":
