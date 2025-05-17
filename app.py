@@ -1,20 +1,17 @@
-
 import os
 import json
-from flask import Flask, render_template, request, jsonify, send_file
+from flask import Flask, request, jsonify, render_template, send_file
 from google.cloud import texttospeech
 from openai import OpenAI
-from pathlib import Path
 import dotenv
+from datetime import datetime
 
-# 環境変数の読み込み
-config = dotenv.dotenv_values(Path(".env"))
-openai_api_key = config.get("OPENAI_API_KEY")
-google_credentials = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
-
+dotenv.load_dotenv()
 app = Flask(__name__)
+
+openai_api_key = os.getenv("OPENAI_API_KEY")
+google_credentials = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
 client = OpenAI(api_key=openai_api_key)
-log_file = "chatlog.txt"
 
 @app.route("/")
 def index():
@@ -28,51 +25,57 @@ def chatbot():
 def chat():
     try:
         data = json.loads(request.data)
-        user_text = data.get("text", "").strip()
+        user_input = data.get("text", "").strip()
+        if len(user_input) > 100:
+            return jsonify({"reply": "入力は100文字以内にしてください。"}), 400
 
-        if not user_text:
-            return jsonify({"reply": "入力が空です。"}), 400
-
-        if len(user_text) > 100:
-            return jsonify({"reply": "入力は100文字以内でお願いします。"}), 400
-
-        print("📥 User:", user_text, flush=True)
-
-        # ChatGPT応答生成
-        response = client.chat.completions.create(
+        completion = client.chat.completions.create(
             model="gpt-4o",
             messages=[
-                {"role": "system", "content": "あなたは親切で丁寧な会社案内チャットボットです。"},
-                {"role": "user", "content": user_text}
+                {"role": "system", "content": "あなたは心優しいアシスタントです。返答は200文字以内の簡潔な日本語でお願いします。"},
+                {"role": "user", "content": user_input}
             ]
         )
-        reply = response.choices[0].message.content.strip()
-        reply = reply[:200]
-        print("🤖 Reply:", reply, flush=True)
-
-        # ログ保存
-        with open(log_file, "a", encoding="utf-8") as f:
-            f.write(f"User: {user_text}\nBot: {reply}\n\n")
+        reply = completion.choices[0].message.content.strip()
+        if len(reply) > 200:
+            reply = reply[:200]
 
         # 音声合成
         tts_client = texttospeech.TextToSpeechClient()
         synthesis_input = texttospeech.SynthesisInput(text=reply)
         voice = texttospeech.VoiceSelectionParams(language_code="ja-JP", ssml_gender=texttospeech.SsmlVoiceGender.NEUTRAL)
         audio_config = texttospeech.AudioConfig(audio_encoding=texttospeech.AudioEncoding.MP3)
-        tts_response = tts_client.synthesize_speech(input=synthesis_input, voice=voice, audio_config=audio_config)
+        response = tts_client.synthesize_speech(input=synthesis_input, voice=voice, audio_config=audio_config)
+        with open("static/output.mp3", "wb") as out:
+            out.write(response.audio_content)
 
-        if not os.path.exists("static"):
-            os.makedirs("static")
-        output_path = os.path.join("static", "output.mp3")
-        with open(output_path, "wb") as out:
-            out.write(tts_response.audio_content)
+        with open("chatlog.txt", "a", encoding="utf-8") as f:
+            f.write(f"{datetime.now()} ユーザー: {user_input}\n")
+            f.write(f"{datetime.now()} みまくん: {reply}\n\n")
 
         return jsonify({"reply": reply})
-
     except Exception as e:
-        print("⚠️ Error:", str(e), flush=True)
-        return jsonify({"reply": "エラーが発生しました。"}), 500
+        return jsonify({"reply": f"エラーが発生しました: {str(e)}"}), 500
 
 @app.route("/logs")
-def logs():
-    return send_file(log_file, mimetype="text/plain", as_attachment=False)
+def view_logs():
+    try:
+        with open("chatlog.txt", "r", encoding="utf-8") as f:
+            logs = f.read()
+        return f"<pre>{logs}</pre><br><a href='/download-log'>ログをダウンロード</a>"
+    except FileNotFoundError:
+        return "ログファイルが見つかりません。"
+
+@app.route("/download-log")
+def download_log():
+    return send_file("chatlog.txt", as_attachment=True)
+
+@app.after_request
+def add_cors_headers(response):
+    response.headers["Access-Control-Allow-Origin"] = "*"
+    response.headers["Access-Control-Allow-Headers"] = "Content-Type"
+    response.headers["Access-Control-Allow-Methods"] = "POST, GET, OPTIONS"
+    return response
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=10000)
