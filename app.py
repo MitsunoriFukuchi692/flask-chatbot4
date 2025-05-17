@@ -12,9 +12,10 @@ from dotenv import load_dotenv
 load_dotenv()
 
 app = Flask(__name__)
-CORS(app, origins=["https://robostudy.jp"])  # ← ここでCORS設定
+CORS(app, origins=["https://robostudy.jp"])  # ← CORS設定
 
-limiter = Limiter(app, key_func=get_remote_address, default_limits=["5 per minute"])
+limiter = Limiter(key_func=get_remote_address, default_limits=["5 per minute"])
+limiter.init_app(app)
 
 openai_api_key = os.getenv("OPENAI_API_KEY")
 google_credentials = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
