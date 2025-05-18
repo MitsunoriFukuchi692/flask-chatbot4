@@ -31,6 +31,11 @@ def index():
 def chatbot():
     return render_template("chatbot.html")
 
+# 静的 .html にアクセスする場合も、同じテンプレートを返す
+@app.route("/chatbot.html")
+def chatbot_html():
+    return render_template("chatbot.html")
+
 @app.route("/chat", methods=["POST"])
 @limiter.limit("3 per 10 seconds")  # 連打防止（10秒に3回まで）
 def chat():
@@ -49,7 +54,7 @@ def chat():
             model="gpt-4o",
             messages=[
                 {"role": "system", "content": "あなたは親切な日本語のアシスタントです。"},
-                {"role": "user", "content": user_text}
+                {"role": "user",   "content": user_text}
             ]
         )
         reply_text = response.choices[0].message["content"].strip()
@@ -84,10 +89,8 @@ def chat():
         return jsonify({"reply": reply_text})
 
     except Exception as e:
-        # 1) スタックトレースをログに出力
         logging.exception("Unhandled exception in /chat")
-        # 2) デバッグ用に例外メッセージをクライアントへ返却
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"reply": "みまくん: 内部エラーが発生しました。もう一度お試しください。"}), 500
 
 @app.route("/logs")
 def logs():
@@ -104,6 +107,17 @@ def download_logs():
         'Content-Type': 'application/octet-stream',
         'Content-Disposition': 'attachment; filename="chatlog.txt"'
     }
+
+@app.route("/debug/chatbot-files")
+def debug_chatbot_files():
+    results = []
+    # プロジェクトルート配下を再帰的に探索
+    for root, dirs, files in os.walk(os.path.dirname(__file__)):
+        for f in files:
+            if f == "chatbot.html":
+                # フルパスを記録
+                out.append(os.path.join(root.replace(base, ""), "chatbot.html"))
+    return "<br>".join(out) or "no chatbot.html here"
 
 if __name__ == "__main__":
     # 開発用サーバー起動（本番は gunicorn 推奨）
