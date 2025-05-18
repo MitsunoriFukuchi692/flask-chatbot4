@@ -1,13 +1,16 @@
-
 import os
 import json
+import logging           # 例外ログ出力用
+
+# 標準出力に DEBUG レベル以上のログを出力
+logging.basicConfig(level=logging.DEBUG)
+
 from flask import Flask, render_template, request, jsonify
 from flask_cors import CORS
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from google.cloud import texttospeech
 import openai
-import logging 
 
 # Flask アプリ初期化
 app = Flask(__name__)
@@ -37,7 +40,9 @@ def chat():
 
         # 入力文字数制限
         if len(user_text) > 100:
-            return jsonify({"reply": "みまくん: 申し訳ありませんが、メッセージは100文字以内でお願いいたします。再度短くして送信してください。"}), 400
+            return jsonify({
+                "reply": "みまくん: 申し訳ありませんが、メッセージは100文字以内でお願いいたします。再度短くして送信してください。"
+            }), 400
 
         # OpenAI 応答生成
         response = openai.ChatCompletion.create(
@@ -54,13 +59,21 @@ def chat():
         # Google Cloud TTS による音声合成
         tts_client = texttospeech.TextToSpeechClient()
         synthesis_input = texttospeech.SynthesisInput(text=reply_text)
-        voice = texttospeech.VoiceSelectionParams(language_code="ja-JP", ssml_gender=texttospeech.SsmlVoiceGender.NEUTRAL)
-        audio_config = texttospeech.AudioConfig(audio_encoding=texttospeech.AudioEncoding.MP3)
-        tts_response = tts_client.synthesize_speech(input=synthesis_input, voice=voice, audio_config=audio_config)
+        voice = texttospeech.VoiceSelectionParams(
+            language_code="ja-JP",
+            ssml_gender=texttospeech.SsmlVoiceGender.NEUTRAL
+        )
+        audio_config = texttospeech.AudioConfig(
+            audio_encoding=texttospeech.AudioEncoding.MP3
+        )
+        tts_response = tts_client.synthesize_speech(
+            input=synthesis_input,
+            voice=voice,
+            audio_config=audio_config
+        )
 
         # static/output.mp3 に保存
-        if not os.path.exists("static"):
-            os.makedirs("static")
+        os.makedirs("static", exist_ok=True)
         with open("static/output.mp3", "wb") as out:
             out.write(tts_response.audio_content)
 
@@ -69,10 +82,12 @@ def chat():
             f.write(f"ユーザー: {user_text}\nみまくん: {reply_text}\n---\n")
 
         return jsonify({"reply": reply_text})
+
     except Exception as e:
- # スタックトレースごとログに出力
+        # 1) スタックトレースをログに出力
         logging.exception("Unhandled exception in /chat")
-        return jsonify({"reply": f"みまくん: エラーが発生しました ({str(e)})"}), 500
+        # 2) デバッグ用に例外メッセージをクライアントへ返却
+        return jsonify({"error": str(e)}), 500
 
 @app.route("/logs")
 def logs():
@@ -91,4 +106,5 @@ def download_logs():
     }
 
 if __name__ == "__main__":
+    # 開発用サーバー起動（本番は gunicorn 推奨）
     app.run(host="0.0.0.0", port=10000)
