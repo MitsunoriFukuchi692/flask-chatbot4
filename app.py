@@ -7,6 +7,7 @@ from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from google.cloud import texttospeech
 import openai
+import logging 
 
 # Flask アプリ初期化
 app = Flask(__name__)
@@ -69,6 +70,8 @@ def chat():
 
         return jsonify({"reply": reply_text})
     except Exception as e:
+ # スタックトレースごとログに出力
+        logging.exception("Unhandled exception in /chat")
         return jsonify({"reply": f"みまくん: エラーが発生しました ({str(e)})"}), 500
 
 @app.route("/logs")
