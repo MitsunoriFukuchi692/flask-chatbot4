@@ -11,7 +11,7 @@ gunicorn
 Flask==2.3.3
 
 # レート制限ミドルウェア
-flask-limiter==2.12.0
+flask-limiter==2.9.2 
 
 # Google Cloud Text-to-Speech
 google-cloud-texttospeech==2.15.1
