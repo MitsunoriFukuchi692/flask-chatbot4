@@ -116,8 +116,8 @@ def debug_chatbot_files():
         for f in files:
             if f == "chatbot.html":
                 # フルパスを記録
-                results.append(os.path.join(root, f))
-    return "<br>".join(results) or "none"
+                out.append(os.path.join(root.replace(base, ""), "chatbot.html"))
+    return "<br>".join(out) or "no chatbot.html here"
 
 if __name__ == "__main__":
     # 開発用サーバー起動（本番は gunicorn 推奨）
