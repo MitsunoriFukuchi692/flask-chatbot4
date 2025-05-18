@@ -108,6 +108,17 @@ def download_logs():
         'Content-Disposition': 'attachment; filename="chatlog.txt"'
     }
 
+@app.route("/debug/chatbot-files")
+def debug_chatbot_files():
+    results = []
+    # プロジェクトルート配下を再帰的に探索
+    for root, dirs, files in os.walk(os.path.dirname(__file__)):
+        for f in files:
+            if f == "chatbot.html":
+                # フルパスを記録
+                results.append(os.path.join(root, f))
+    return "<br>".join(results) or "none"
+
 if __name__ == "__main__":
     # 開発用サーバー起動（本番は gunicorn 推奨）
     app.run(host="0.0.0.0", port=10000)
