@@ -1,6 +1,6 @@
 import os
 import json
-import logging           # 例外ログ出力用
+import logging  # 例外ログ出力用
 
 # 標準出力に DEBUG レベル以上のログを出力
 logging.basicConfig(level=logging.DEBUG)
@@ -27,14 +27,26 @@ os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = os.getenv("GOOGLE_APPLICATION_CRE
 def index():
     return render_template("index.html")
 
+# chatbot.html も /chatbot も同じハンドラで返す
 @app.route("/chatbot")
+@app.route("/chatbot.html")
 def chatbot():
     return render_template("chatbot.html")
 
-# 静的 .html にアクセスする場合も、同じテンプレートを返す
-@app.route("/chatbot.html")
-def chatbot_html():
-    return render_template("chatbot.html")
+# デバッグ用ルート: どこに chatbot.html が残っているか一覧表示
+@app.route("/debug/chatbot-files")
+def debug_chatbot_files():
+    try:
+        base_dir = os.path.dirname(__file__)
+        found = []
+        for root, dirs, files in os.walk(base_dir):
+            if "chatbot.html" in files:
+                rel = os.path.relpath(os.path.join(root, "chatbot.html"), base_dir)
+                found.append(rel)
+        return "<br>".join(found) if found else "no chatbot.html here"
+    except Exception:
+        logging.exception("Error in debug_chatbot_files")
+        return "error listing files", 500
 
 @app.route("/chat", methods=["POST"])
 @limiter.limit("3 per 10 seconds")  # 連打防止（10秒に3回まで）
@@ -43,11 +55,8 @@ def chat():
         data = json.loads(request.data)
         user_text = data.get("text", "").strip()
 
-        # 入力文字数制限
         if len(user_text) > 100:
-            return jsonify({
-                "reply": "みまくん: 申し訳ありませんが、メッセージは100文字以内でお願いいたします。再度短くして送信してください。"
-            }), 400
+            return jsonify({"reply": "みまくん: メッセージは100文字以内でお願いします。"}), 400
 
         # OpenAI 応答生成
         response = openai.ChatCompletion.create(
@@ -68,36 +77,30 @@ def chat():
             language_code="ja-JP",
             ssml_gender=texttospeech.SsmlVoiceGender.NEUTRAL
         )
-        audio_config = texttospeech.AudioConfig(
-            audio_encoding=texttospeech.AudioEncoding.MP3
-        )
-        tts_response = tts_client.synthesize_speech(
-            input=synthesis_input,
-            voice=voice,
-            audio_config=audio_config
+        audio_config = texttospeech.AudioConfig(audio_encoding=texttospeech.AudioEncoding.MP3)
+        tts_resp = tts_client.synthesize_speech(
+            input=synthesis_input, voice=voice, audio_config=audio_config
         )
 
-        # static/output.mp3 に保存
         os.makedirs("static", exist_ok=True)
         with open("static/output.mp3", "wb") as out:
-            out.write(tts_response.audio_content)
+            out.write(tts_resp.audio_content)
 
         # チャットログ保存
         with open("chatlog.txt", "a", encoding="utf-8") as f:
             f.write(f"ユーザー: {user_text}\nみまくん: {reply_text}\n---\n")
 
         return jsonify({"reply": reply_text})
-
-    except Exception as e:
+    except Exception:
         logging.exception("Unhandled exception in /chat")
-        return jsonify({"reply": "みまくん: 内部エラーが発生しました。もう一度お試しください。"}), 500
+        return jsonify({"reply": "みまくん: 内部エラーが発生しました。"}), 500
 
 @app.route("/logs")
 def logs():
     try:
         with open("chatlog.txt", "r", encoding="utf-8") as f:
-            log_content = f.read()
-        return f"<pre>{log_content}</pre><a href='/download-logs'>ログをダウンロード</a>"
+            content = f.read()
+        return f"<pre>{content}</pre><a href='/download-logs'>ログをダウンロード</a>"
     except FileNotFoundError:
         return "ログファイルが存在しません。"
 
@@ -109,5 +112,4 @@ def download_logs():
     }
 
 if __name__ == "__main__":
-    # 開発用サーバー起動（本番は gunicorn 推奨）
     app.run(host="0.0.0.0", port=10000)
