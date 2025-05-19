@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>みまくん Chatbot</title>
   <style>
-    /* 全体を中央寄せ＆幅を制限 */
+    /* コンテナ周り（前回お渡しのまま） */
     .chat-container {
       max-width: 600px;
       margin: 2rem auto;
@@ -15,8 +15,6 @@
       box-shadow: 0 2px 4px rgba(0,0,0,0.1);
       background: #fafafa;
     }
-
-    /* メッセージウィンドウ */
     .chat-window {
       display: flex;
       flex-direction: column;
@@ -28,8 +26,6 @@
       background: #fff;
       border-radius: 4px;
     }
-
-    /* 吹き出しデザイン */
     .message {
       padding: 0.5rem 0.75rem;
       border-radius: 12px;
@@ -38,19 +34,14 @@
       max-width: 80%;
       word-break: break-word;
     }
-    .message.user {
-      align-self: flex-end;
-      background: #dcf8c6;
-    }
-    .message.bot {
-      align-self: flex-start;
-      background: #eef2fa;
-    }
+    .message.user { align-self: flex-end; background: #dcf8c6; }
+    .message.bot  { align-self: flex-start; background: #eef2fa; }
 
-    /* 入力フォーム */
+    /* 入力エリアにマイクボタンを追加 */
     .input-area {
       display: flex;
       gap: 0.5rem;
+      align-items: center;
     }
     .input-area input {
       flex: 1;
@@ -59,7 +50,8 @@
       border: 1px solid #ccc;
       border-radius: 4px;
     }
-    .input-area button {
+    .input-area button,
+    .input-area .mic-btn {
       padding: 0.5rem 1rem;
       font-size: 0.9rem;
       border: none;
@@ -68,8 +60,12 @@
       border-radius: 4px;
       cursor: pointer;
     }
-    .input-area button:hover {
+    .input-area button:hover,
+    .input-area .mic-btn:hover {
       background: #357ab8;
+    }
+    .input-area .mic-btn.recording {
+      background: #e24a4a !important;
     }
 
     /* 音声プレイヤー */
@@ -81,14 +77,8 @@
 
     /* モバイル対応 */
     @media (max-width: 600px) {
-      .chat-container {
-        margin: 1rem;
-        padding: 0.5rem;
-        max-width: 100%;
-      }
-      .input-area input, .input-area button {
-        font-size: 1rem;
-      }
+      .chat-container { margin: 1rem; padding: 0.5rem; max-width: 100%; }
+      .input-area input, .input-area button, .input-area .mic-btn { font-size: 1rem; }
     }
   </style>
 </head>
@@ -98,14 +88,17 @@
     <form id="chatForm" class="input-area">
       <input type="text" id="userInput" placeholder="メッセージを入力…" autocomplete="off">
       <button type="submit">送信</button>
+      <button type="button" class="mic-btn" id="micBtn">🎤</button>
     </form>
     <audio id="audioPlayer" controls></audio>
   </div>
 
   <script>
-    const form = document.getElementById('chatForm');
-    const chatLog = document.getElementById('chatLog');
-    const audioPlayer = document.getElementById('audioPlayer');
+    const form       = document.getElementById('chatForm');
+    const chatLog    = document.getElementById('chatLog');
+    const audioPlayer= document.getElementById('audioPlayer');
+    const userInput  = document.getElementById('userInput');
+    const micBtn     = document.getElementById('micBtn');
 
     function appendMessage(text, cls) {
       const div = document.createElement('div');
@@ -117,11 +110,10 @@
 
     form.addEventListener('submit', async e => {
       e.preventDefault();
-      const input = document.getElementById('userInput');
-      const userText = input.value.trim();
+      const userText = userInput.value.trim();
       if (!userText) return;
       appendMessage('あなた: ' + userText, 'user');
-      input.value = '';
+      userInput.value = '';
       try {
         const res = await fetch('/chat', {
           method: 'POST',
@@ -129,16 +121,43 @@
           body: JSON.stringify({ text: userText })
         });
         const data = await res.json();
-        const reply = data.reply;
-        appendMessage('みまくん: ' + reply, 'bot');
-
+        appendMessage('みまくん: ' + data.reply, 'bot');
         // 音声再生
         audioPlayer.src = '/static/output.mp3';
         audioPlayer.style.display = 'block';
-        audioPlayer.play().catch(() => {});
-      } catch (err) {
+        audioPlayer.play().catch(()=>{});
+      } catch {
         appendMessage('みまくん: エラーが発生しました。', 'bot');
       }
+    });
+
+    // Web Speech API を使った音声入力
+    let recognition;
+    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      recognition = new SpeechRecognition();
+      recognition.lang = 'ja-JP';
+      recognition.interimResults = false;
+      recognition.maxAlternatives = 1;
+
+      recognition.addEventListener('start', () => {
+        micBtn.classList.add('recording');
+      });
+      recognition.addEventListener('end', () => {
+        micBtn.classList.remove('recording');
+      });
+      recognition.addEventListener('result', e => {
+        const text = e.results[0][0].transcript;
+        userInput.value = text;
+        form.dispatchEvent(new Event('submit'));
+      });
+    } else {
+      micBtn.disabled = true;
+      micBtn.title = '音声入力非対応のブラウザです';
+    }
+
+    micBtn.addEventListener('click', () => {
+      if (recognition) recognition.start();
     });
   </script>
 </body>
