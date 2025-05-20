@@ -1,108 +1,164 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>チャットボット</title>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
-    <style>
-        body { font-family: "Hiragino Sans", Meiryo, sans-serif; background-color: #f9f9f9; padding: 20px; }
-        #chat-container { max-width: 600px; margin: 20px auto; background: #fff; border-radius: 8px; padding: 20px; height: 400px; overflow-y: auto; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        .message { margin: 10px 0; padding: 10px; border-radius: 5px; }
-        .user { background-color: #e0f7fa; text-align: right; }
-        .bot  { background-color: #e8f5e9; text-align: left; }
-        #controls { text-align: center; margin-top: 20px; }
-        input, button { padding: 10px; font-size: 16px; margin: 5px; }
-        #user-input { width: 70%; }
-    </style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>みまくん Chatbot</title>
+  <style>
+    /* コンテナ周り（前回お渡しのまま） */
+    .chat-container {
+      max-width: 600px;
+      margin: 2rem auto;
+      padding: 1rem;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      background: #fafafa;
+    }
+    .chat-window {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      max-height: 60vh;
+      overflow-y: auto;
+      margin-bottom: 1rem;
+      padding: 0.5rem;
+      background: #fff;
+      border-radius: 4px;
+    }
+    .message {
+      padding: 0.5rem 0.75rem;
+      border-radius: 12px;
+      font-size: 0.9rem;
+      line-height: 1.4;
+      max-width: 80%;
+      word-break: break-word;
+    }
+    .message.user { align-self: flex-end; background: #dcf8c6; }
+    .message.bot  { align-self: flex-start; background: #eef2fa; }
+
+    /* 入力エリアにマイクボタンを追加 */
+    .input-area {
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+    }
+    .input-area input {
+      flex: 1;
+      padding: 0.5rem;
+      font-size: 0.9rem;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    .input-area button,
+    .input-area .mic-btn {
+      padding: 0.5rem 1rem;
+      font-size: 0.9rem;
+      border: none;
+      background: #4a90e2;
+      color: #fff;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .input-area button:hover,
+    .input-area .mic-btn:hover {
+      background: #357ab8;
+    }
+    .input-area .mic-btn.recording {
+      background: #e24a4a !important;
+    }
+
+    /* 音声プレイヤー */
+    #audioPlayer {
+      width: 100%;
+      margin-top: 1rem;
+      display: none;
+    }
+
+    /* モバイル対応 */
+    @media (max-width: 600px) {
+      .chat-container { margin: 1rem; padding: 0.5rem; max-width: 100%; }
+      .input-area input, .input-area button, .input-area .mic-btn { font-size: 1rem; }
+    }
+  </style>
 </head>
 <body>
+  <div class="chat-container">
+    <div id="chatLog" class="chat-window"></div>
+    <form id="chatForm" class="input-area">
+      <input type="text" id="userInput" placeholder="メッセージを入力…" autocomplete="off">
+      <button type="submit">送信</button>
+      <button type="button" class="mic-btn" id="micBtn">🎤</button>
+    </form>
+    <audio id="audioPlayer" controls></audio>
+  </div>
 
-<h1>音声・テキスト対応 AIチャットボット</h1>
-<div id="chat-container"></div>
-<div id="controls">
-    <button id="start-button">🎤 音声入力開始</button>
-    <input type="text" id="user-input" placeholder="メッセージを入力...">
-    <button id="send-button">送信</button>
-</div>
+  <script>
+    const form       = document.getElementById('chatForm');
+    const chatLog    = document.getElementById('chatLog');
+    const audioPlayer= document.getElementById('audioPlayer');
+    const userInput  = document.getElementById('userInput');
+    const micBtn     = document.getElementById('micBtn');
 
-<script>
-// Supabase初期化（URLとKEYは環境変数等から読み込んでください）
-const SUPABASE_URL = 'https://your-project.supabase.co';
-const SUPABASE_KEY = 'your-public-anon-key';
-const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    function appendMessage(text, cls) {
+      const div = document.createElement('div');
+      div.classList.add('message', cls);
+      div.textContent = text;
+      chatLog.appendChild(div);
+      chatLog.scrollTop = chatLog.scrollHeight;
+    }
 
-const chatContainer = document.getElementById("chat-container");
-const startButton   = document.getElementById("start-button");
-const sendButton    = document.getElementById("send-button");
-const userInput     = document.getElementById("user-input");
-
-// メッセージを追加 (XSS対策: innerTextのみ使用)
-function addMessage(text, isUser = true) {
-    const div = document.createElement("div");
-    div.className = 'message ' + (isUser ? 'user' : 'bot');
-    div.innerText = text;  // innerText で安全に表示
-    chatContainer.appendChild(div);
-    chatContainer.scrollTop = chatContainer.scrollHeight;
-}
-
-// テキストで送信
-async function sendMessage(text) {
-    if (!text.trim()) return;
-    addMessage(text, true);
-    try {
+    form.addEventListener('submit', async e => {
+      e.preventDefault();
+      const userText = userInput.value.trim();
+      if (!userText) return;
+      appendMessage('あなた: ' + userText, 'user');
+      userInput.value = '';
+      try {
         const res = await fetch('/chat', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ text: text })
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text: userText })
         });
-        const json = await res.json();
-        addMessage(json.reply, false);
-    } catch (e) {
-        addMessage('⚠️ サーバーエラー', false);
-        console.error(e);
-    }
-}
+        const data = await res.json();
+        appendMessage('みまくん: ' + data.reply, 'bot');
+        // 音声再生
+        audioPlayer.src = '/static/output.mp3';
+        audioPlayer.style.display = 'block';
+        audioPlayer.play().catch(()=>{});
+      } catch {
+        appendMessage('みまくん: エラーが発生しました。', 'bot');
+      }
+    });
 
-// 音声認識開始
-function startRecognition() {
-    if (!('webkitSpeechRecognition' in window)) {
-        alert('お使いのブラウザは音声認識に対応していません');
-        return;
-    }
-    const recognition = new webkitSpeechRecognition();
-    recognition.lang = 'ja-JP';
-    recognition.interimResults = false;
-    recognition.maxAlternatives = 1;
-    recognition.onresult = (e) => {
-        const transcript = e.results[0][0].transcript;
-        sendMessage(transcript);
-    };
-    recognition.onerror = (e) => {
-        console.error('Recognition error', e.error);
-    };
-    recognition.start();
-}
+    // Web Speech API を使った音声入力
+    let recognition;
+    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      recognition = new SpeechRecognition();
+      recognition.lang = 'ja-JP';
+      recognition.interimResults = false;
+      recognition.maxAlternatives = 1;
 
-sendButton.addEventListener('click', () => sendMessage(userInput.value));
-userInput.addEventListener('keypress', e => { if (e.key === 'Enter') sendMessage(userInput.value); });
-startButton.addEventListener('click', startRecognition);
-
-// ページロードで過去ログ読み込み
-window.onload = async () => {
-    try {
-        const { data, error } = await supabase
-            .from('conversation_logs')
-            .select('*')
-            .order('created_at', { ascending: true });
-        if (!error) data.forEach(log => {
-            addMessage(log.user_message, true);
-            addMessage(log.bot_response, false);
-        });
-    } catch (e) {
-        console.error(e);
+      recognition.addEventListener('start', () => {
+        micBtn.classList.add('recording');
+      });
+      recognition.addEventListener('end', () => {
+        micBtn.classList.remove('recording');
+      });
+      recognition.addEventListener('result', e => {
+        const text = e.results[0][0].transcript;
+        userInput.value = text;
+        form.dispatchEvent(new Event('submit'));
+      });
+    } else {
+      micBtn.disabled = true;
+      micBtn.title = '音声入力非対応のブラウザです';
     }
-};
-</script>
+
+    micBtn.addEventListener('click', () => {
+      if (recognition) recognition.start();
+    });
+  </script>
 </body>
 </html>
