@@ -60,7 +60,7 @@ def chat():
     try:
         # JSON ボディを読み込み
         data = json.loads(request.data)
-        raw = data.get("text", "")      # 生の入力
+        raw = data.get("message", "")     # 生の入力
         user_text = escape(raw).strip() # XSS 対策としてサニタイズ＋前後空白除去
 
         # 長すぎるメッセージは弾く
