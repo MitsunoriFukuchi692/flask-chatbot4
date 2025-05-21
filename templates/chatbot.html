@@ -5,8 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>みまくん Chatbot</title>
   <!-- Supabase ライブラリ（UMD 版）を先に読み込む -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js/dist/umd/index.min.js"></script>
-  <style>
+    <style>
     /* （省略）既存のスタイルをここに */
   </style>
 </head>
@@ -28,9 +27,9 @@
 
   <script>
     // Supabase の初期化は別変数で受け取る
-    const SUPABASE_URL = 'https://your-project.supabase.co';
-    const SUPABASE_KEY = 'your-public-anon-key';
-    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+   /*  const SUPABASE_URL = 'https://uvseetukwotbmyqdfcaj.supabase.co;
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV2c2VldHVrd290Ym15cWRmY2FqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQ1OTg3MzQsImV4cCI6MjA2MDE3NDczNH0.Jow9WA376Mo4xDYuyHUhkBAslxKb9VaLoTo1hasSVNY';
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY); */
 
     const form        = document.getElementById('chatForm');
     const chatLog     = document.getElementById('chatLog');
