@@ -36,6 +36,15 @@
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
   </script>
 
+　<button id="send-button">送信</button>
+　<script>
+　  // ↓ まずはここだけ試す
+  　document.getElementById('send-button').addEventListener('click', () => {
+    console.log('► send-button clicked');
+    alert('ボタンは動いています');
+  });
+　</script>
+
   <script>
     const form        = document.getElementById('chatForm');
     const chatLog     = document.getElementById('chatLog');
