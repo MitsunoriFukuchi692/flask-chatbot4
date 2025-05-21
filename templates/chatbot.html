@@ -1,126 +1,164 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>みまくん Chatbot</title>
+
   <!-- Supabase ライブラリ（UMD 版）を先に読み込む -->
-  <!-- defer を外して、ライブラリ読み込みを同期化 -->
-  <!-- 安定版 v2 の最新 UMD -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 
   <style>
-    /* ここに既存のスタイルを残してください */
+    /* 既存のスタイルをこちらに記述 */
+    .chat-container {
+      max-width: 600px;
+      margin: 0 auto;
+      border: 1px solid #ccc;
+      padding: 1rem;
+      background: #fff;
+    }
+    .chat-window {
+      height: 400px;
+      overflow-y: auto;
+      border: 1px solid #ddd;
+      padding: 0.5rem;
+      margin-bottom: 0.5rem;
+    }
+    .input-area {
+      display: flex;
+    }
+    .input-area input[type="text"] {
+      flex: 1;
+      padding: 0.5rem;
+      margin-right: 0.5rem;
+    }
+    .input-area button {
+      padding: 0.5rem 1rem;
+    }
+    .message.user {
+      text-align: right;
+      margin: 0.25rem 0;
+      color: #0077cc;
+    }
+    .message.bot {
+      text-align: left;
+      margin: 0.25rem 0;
+      color: #333;
+    }
+    .mic-btn.recording {
+      background: red;
+      color: #fff;
+    }
   </style>
 </head>
 <body>
   <div class="chat-container">
     <div id="chatLog" class="chat-window"></div>
     <form id="chatForm" class="input-area">
-      <input type="text" id="userInput" placeholder="メッセージを入力…" autocomplete="off">
+      <input
+        type="text"
+        id="userInput"
+        placeholder="メッセージを入力…"
+        autocomplete="off"
+      />
       <button type="submit">送信</button>
-      <button type="button" class="mic-btn" id="micBtn">🎤</button>
+      <button type="button" id="micBtn" class="mic-btn">🎤</button>
     </form>
     <audio id="audioPlayer" controls style="display:none"></audio>
   </div>
 
   <script>
-    console.log("🐞 Loaded chatbot.html – fixed init order");
+    console.log("🐞 chatbot.html loaded");
   </script>
 
-  <!-- Supabase クライアント初期化 -->
   <script>
-    // Supabase ダッシュボードの API Settings から取得した値に置き換えてください
+    // Supabase クライアント初期化
     const SUPABASE_URL = 'https://uvseetukwotbmyqdfcaj.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV2c2VldHVrd290Ym15cWRmY2FqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQ1OTg3MzQsImV4cCI6MjA2MDE3NDczNH0.Jow9WA376Mo4xDYuyHUhkBAslxKb9VaLoTo1hasSVNY';
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-  </script>
 
-　<button id="send-button">送信</button>
-　<script>
-　  // ↓ まずはここだけ試す
-  　document.getElementById('send-button').addEventListener('click', () => {
-    console.log('► send-button clicked');
-    alert('ボタンは動いています');
-  });
-　</script>
-
-  <script>
-    const form        = document.getElementById('chatForm');
+    // DOM 要素取得
+    const chatForm    = document.getElementById('chatForm');
     const chatLog     = document.getElementById('chatLog');
-    const audioPlayer = document.getElementById('audioPlayer');
     const userInput   = document.getElementById('userInput');
+    const audioPlayer = document.getElementById('audioPlayer');
     const micBtn      = document.getElementById('micBtn');
 
+    // メッセージ追加関数
     function appendMessage(text, cls) {
       const div = document.createElement('div');
       div.classList.add('message', cls);
-      div.textContent = text;
+      div.innerText = text;
       chatLog.appendChild(div);
       chatLog.scrollTop = chatLog.scrollHeight;
     }
 
-    form.addEventListener('submit', async e => {
+    // フォーム送信処理
+    chatForm.addEventListener('submit', async (e) => {
       e.preventDefault();
-      const userText = userInput.value.trim();
-      if (!userText) return;
-      appendMessage('あなた: ' + userText, 'user');
+      const message = userInput.value.trim();
+      if (!message) return;
+      appendMessage(`あなた: ${message}`, 'user');
       userInput.value = '';
       try {
-        // サーバーからの応答取得
         const res = await fetch('/chat', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ text: userText })
+          body: JSON.stringify({ text: message })
         });
         const data = await res.json();
-        appendMessage('みまくん: ' + data.reply, 'bot');
+        appendMessage(`みまくん: ${data.reply}`, 'bot');
 
         // 音声再生
         audioPlayer.src = '/static/output.mp3';
         audioPlayer.style.display = 'block';
         await audioPlayer.play();
-      } catch {
+      } catch (err) {
+        console.error(err);
         appendMessage('みまくん: エラーが発生しました。', 'bot');
       }
     });
 
+    // 音声認識セットアップ
     let recognition;
     if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-      recognition = new SpeechRecognition();
+      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+      recognition = new SR();
       recognition.lang = 'ja-JP';
       recognition.interimResults = false;
       recognition.maxAlternatives = 1;
 
-      recognition.addEventListener('start', () => micBtn.classList.add('recording'));
-      recognition.addEventListener('end',   () => micBtn.classList.remove('recording'));
-      recognition.addEventListener('result', e => {
+      recognition.addEventListener('start', () =>
+        micBtn.classList.add('recording')
+      );
+      recognition.addEventListener('end', () =>
+        micBtn.classList.remove('recording')
+      );
+      recognition.addEventListener('result', (e) => {
         userInput.value = e.results[0][0].transcript;
-        form.dispatchEvent(new Event('submit'));
+        chatForm.dispatchEvent(new Event('submit'));
       });
+
+      micBtn.addEventListener('click', () => recognition.start());
     } else {
       micBtn.disabled = true;
       micBtn.title = '音声入力非対応のブラウザです';
     }
 
-    micBtn.addEventListener('click', () => recognition && recognition.start());
-
-    // ページロード時に過去ログを Supabase から取得
+    // 過去ログ読み込み（Supabase）
     window.addEventListener('load', async () => {
       try {
         const { data, error } = await supabaseClient
           .from('conversation_logs')
           .select('*')
           .order('created_at', { ascending: true });
-        if (!error) {
-          data.forEach(log => {
-            appendMessage(log.user_message, 'user');
-            appendMessage(log.bot_response,  'bot');
-          });
-        }
-      } catch (e) {
-        console.error(e);
+        if (error) throw error;
+        data.forEach(log => {
+          appendMessage(`あなた: ${log.user_message}`, 'user');
+          appendMessage(`みまくん: ${log.bot_response}`, 'bot');
+        });
+      } catch (err) {
+        console.error('Supabase error:', err);
       }
     });
   </script>
