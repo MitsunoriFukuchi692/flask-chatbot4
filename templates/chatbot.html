@@ -5,7 +5,8 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>みまくん Chatbot</title>
   <!-- Supabase ライブラリ（UMD 版）を先に読み込む -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js/dist/umd/supabase.min.js" defer></script>
+  <!-- defer を外して、ライブラリ読み込みを同期化 -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js/dist/umd/supabase.min.js"></script>
 
   <style>
     /* ここに既存のスタイルを残してください */
@@ -23,7 +24,7 @@
   </div>
 
   <script>
-    console.log("🐞 Loaded chatbot.html – updated版");
+    console.log("🐞 Loaded chatbot.html – fixed init order");
   </script>
 
   <!-- Supabase クライアント初期化 -->
