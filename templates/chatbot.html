@@ -5,16 +5,13 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>みまくん Chatbot</title>
   <!-- Supabase ライブラリ（UMD 版）を先に読み込む -->
-    <style>
-    /* （省略）既存のスタイルをここに */
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js/dist/umd/supabase.min.js" defer></script>
+
+  <style>
+    /* ここに既存のスタイルを残してください */
   </style>
 </head>
 <body>
-
-<script>
-  console.log("🐞 Loaded chatbot.html – old版");
-</script>
-
   <div class="chat-container">
     <div id="chatLog" class="chat-window"></div>
     <form id="chatForm" class="input-area">
@@ -22,15 +19,22 @@
       <button type="submit">送信</button>
       <button type="button" class="mic-btn" id="micBtn">🎤</button>
     </form>
-    <audio id="audioPlayer" controls></audio>
+    <audio id="audioPlayer" controls style="display:none"></audio>
   </div>
 
   <script>
-    // Supabase の初期化は別変数で受け取る
-   /*  const SUPABASE_URL = 'https://uvseetukwotbmyqdfcaj.supabase.co;
-    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV2c2VldHVrd290Ym15cWRmY2FqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQ1OTg3MzQsImV4cCI6MjA2MDE3NDczNH0.Jow9WA376Mo4xDYuyHUhkBAslxKb9VaLoTo1hasSVNY';
-    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY); */
+    console.log("🐞 Loaded chatbot.html – updated版");
+  </script>
 
+  <!-- Supabase クライアント初期化 -->
+  <script>
+    // Supabase ダッシュボードの API Settings から取得した値に置き換えてください
+    const SUPABASE_URL = 'https://uvseetukwotbmyqdfcaj.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV2c2VldHVrd290Ym15cWRmY2FqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQ1OTg3MzQsImV4cCI6MjA2MDE3NDczNH0.Jow9WA376Mo4xDYuyHUhkBAslxKb9VaLoTo1hasSVNY';
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  </script>
+
+  <script>
     const form        = document.getElementById('chatForm');
     const chatLog     = document.getElementById('chatLog');
     const audioPlayer = document.getElementById('audioPlayer');
@@ -64,7 +68,7 @@
         // 音声再生
         audioPlayer.src = '/static/output.mp3';
         audioPlayer.style.display = 'block';
-        audioPlayer.play().catch(()=>{});
+        await audioPlayer.play();
       } catch {
         appendMessage('みまくん: エラーが発生しました。', 'bot');
       }
