@@ -2,10 +2,13 @@ import os
 import json
 import logging  # 例外ログ出力用
 
-# 標準出力に DEBUG レベル以上のログを出力、開発が終わったら削除
+# 標準出力に DEBUG レベル以上のログを出力、開発が終わったらレベルを上げる
 logging.basicConfig(level=logging.DEBUG)
 
-from flask import Flask, render_template, request, jsonify
+from flask import (
+    Flask, render_template, request, jsonify,
+    make_response  # ← 追加
+)
 from flask_cors import CORS
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
@@ -23,17 +26,34 @@ limiter = Limiter(app, key_func=get_remote_address, default_limits=["10 per minu
 openai.api_key = os.getenv("OPENAI_API_KEY")
 os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
 
+
 @app.route("/")
 def index():
     return render_template("index.html")
 
-# chatbot.html も /chatbot も同じハンドラで返す
+
+# /chatbot と /chatbot.html で同じテンプレートを返す
 @app.route("/chatbot")
 @app.route("/chatbot.html")
 def chatbot():
-    return render_template("chatbot.html")
+    # キャッシュ無効化ヘッダーをつけて返却
+    resp = make_response(render_template("chatbot.html"))
+    resp.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+    resp.headers["Pragma"]        = "no-cache"
+    resp.headers["Expires"]       = "0"
+    return resp
 
-# デバッグ用ルート: どこに chatbot.html が残っているか一覧表示
+
+# すべてのレスポンスにキャッシュ無効化ヘッダーを付与（念のため）
+@app.after_request
+def add_no_cache_headers(response):
+    response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+    response.headers["Pragma"]        = "no-cache"
+    response.headers["Expires"]       = "0"
+    return response
+
+
+# デバッグ用ルート: プロジェクト内に残っている chatbot.html の一覧
 @app.route("/debug/chatbot-files")
 def debug_chatbot_files():
     try:
@@ -47,6 +67,7 @@ def debug_chatbot_files():
     except Exception:
         logging.exception("Error in debug_chatbot_files")
         return "error listing files", 500
+
 
 @app.route("/chat", methods=["POST"])
 @limiter.limit("3 per 10 seconds")  # 連打防止（10秒に3回まで）
@@ -95,6 +116,7 @@ def chat():
         logging.exception("Unhandled exception in /chat")
         return jsonify({"reply": "みまくん: 内部エラーが発生しました。"}), 500
 
+
 @app.route("/logs")
 def logs():
     try:
@@ -104,12 +126,14 @@ def logs():
     except FileNotFoundError:
         return "ログファイルが存在しません。"
 
+
 @app.route("/download-logs")
 def download_logs():
     return open("chatlog.txt", "rb").read(), 200, {
-        'Content-Type': 'application/octet-stream',
-        'Content-Disposition': 'attachment; filename="chatlog.txt"'
+        "Content-Type": "application/octet-stream",
+        "Content-Disposition": 'attachment; filename="chatlog.txt"'
     }
+
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # 環境変数 PORT があれば使い、なければ 5000
