@@ -86,7 +86,7 @@ def chat():
         return jsonify({"reply": reply})
 
     except Exception as e:
-        return jsonify({"reply": f"⚠️ エラーが発生しました: {str(e)}"}), 500
+        return jsonify({"reply": f"エラーが発生しました: {str(e)}"}), 500
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=10000)
