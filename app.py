@@ -77,7 +77,8 @@ def chat():
 
         # 会話ログ保存
         with open("chatlog.txt", "a", encoding="utf-8") as log:
-            log.write(f"👤 User: {user_text}
+            log.write(f"🧑 ユーザー: {user_text}\n")
+
 🤖 Bot: {reply}
 
 ")
