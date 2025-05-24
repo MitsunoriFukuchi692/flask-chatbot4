@@ -1,166 +1,104 @@
+
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>みまくん Chatbot</title>
-
-  <!-- Supabase ライブラリ（UMD 版）を先に読み込む -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-
-  <style>
-    /* 既存のスタイルをこちらに記述 */
-    .chat-container {
-      max-width: 600px;
-      margin: 0 auto;
-      border: 1px solid #ccc;
-      padding: 1rem;
-      background: #fff;
-    }
-    .chat-window {
-      height: 400px;
-      overflow-y: auto;
-      border: 1px solid #ddd;
-      padding: 0.5rem;
-      margin-bottom: 0.5rem;
-    }
-    .input-area {
-      display: flex;
-    }
-    .input-area input[type="text"] {
-      flex: 1;
-      padding: 0.5rem;
-      margin-right: 0.5rem;
-    }
-    .input-area button {
-      padding: 0.5rem 1rem;
-    }
-    .message.user {
-      text-align: right;
-      margin: 0.25rem 0;
-      color: #0077cc;
-    }
-    .message.bot {
-      text-align: left;
-      margin: 0.25rem 0;
-      color: #333;
-    }
-    .mic-btn.recording {
-      background: red;
-      color: #fff;
-    }
-  </style>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>AIみまくんチャット</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            margin: 0;
+            padding: 0;
+            background: #f5f5f5;
+        }
+        .container {
+            max-width: 600px;
+            margin: auto;
+            padding: 1rem;
+            background: #fff;
+            box-shadow: 0 0 8px rgba(0,0,0,0.1);
+        }
+        h1 {
+            font-size: 1.5rem;
+            color: #333;
+            margin-bottom: 1rem;
+        }
+        textarea {
+            width: 100%;
+            height: 100px;
+            font-size: 1rem;
+        }
+        button {
+            margin-top: 0.5rem;
+            padding: 0.5rem 1rem;
+            font-size: 1rem;
+        }
+        .chat-log {
+            margin-top: 1rem;
+            background: #f9f9f9;
+            padding: 1rem;
+            height: 300px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+        }
+        .user, .bot {
+            margin-bottom: 0.75rem;
+        }
+        .user::before {
+            content: "👤 ユーザー: ";
+            font-weight: bold;
+        }
+        .bot::before {
+            content: "🤖 みまくん: ";
+            font-weight: bold;
+        }
+        audio {
+            display: block;
+            margin-top: 1rem;
+        }
+    </style>
 </head>
 <body>
-  <div class="chat-container">
-    <div id="chatLog" class="chat-window"></div>
-    <form id="chatForm" class="input-area">
-      <input
-        type="text"
-        id="userInput"
-        placeholder="メッセージを入力…"
-        autocomplete="off"
-      />
-      <button type="submit">送信</button>
-      <button type="button" id="micBtn" class="mic-btn">🎤</button>
-    </form>
-    <audio id="audioPlayer" controls style="display:none"></audio>
-  </div>
+    <div class="container">
+        <h1>AIみまくん チャットボット</h1>
+        <form id="chatForm">
+            <textarea id="userInput" maxlength="100" placeholder="100文字以内で入力してください..."></textarea><br />
+            <button type="submit">送信</button>
+        </form>
+        <div class="chat-log" id="chatLog"></div>
+        <audio id="audioPlayer" controls style="display:none;"></audio>
+    </div>
 
-  <script>
-    console.log("🐞 chatbot.html loaded");
-  </script>
+    <script>
+        const chatForm = document.getElementById("chatForm");
+        const chatLog = document.getElementById("chatLog");
+        const audioPlayer = document.getElementById("audioPlayer");
 
-  <script>
-    // Supabase クライアント初期化
-    const SUPABASE_URL = 'https://uvseetukwotbmyqdfcaj.supabase.co';
-    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV2c2VldHVrd290Ym15cWRmY2FqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQ1OTg3MzQsImV4cCI6MjA2MDE3NDczNH0.Jow9WA376Mo4xDYuyHUhkBAslxKb9VaLoTo1hasSVNY';
-    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-    // DOM 要素取得
-    const chatForm    = document.getElementById('chatForm');
-    const chatLog     = document.getElementById('chatLog');
-    const userInput   = document.getElementById('userInput');
-    const audioPlayer = document.getElementById('audioPlayer');
-    const micBtn      = document.getElementById('micBtn');
-
-    // メッセージ追加関数
-    function appendMessage(text, cls) {
-      const div = document.createElement('div');
-      div.classList.add('message', cls);
-      div.innerText = text;
-      chatLog.appendChild(div);
-      chatLog.scrollTop = chatLog.scrollHeight;
-    }
-
-    // フォーム送信処理
-    chatForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const message = userInput.value.trim();
-      if (!message) return;
-      appendMessage(`あなた: ${message}`, 'user');
-      userInput.value = '';
-      try {
-        const res = await fetch('/chat', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ text: message })
+        chatForm.addEventListener("submit", function(e) {
+            e.preventDefault();
+            const input = document.getElementById("userInput").value.trim();
+            if (!input) return;
+            document.getElementById("userInput").value = "";
+            chatLog.innerHTML += `<div class="user">${input}</div>`;
+            fetch("/chat", {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({ text: input })
+            })
+            .then(response => response.json())
+            .then(data => {
+                chatLog.innerHTML += `<div class="bot">${data.reply}</div>`;
+                chatLog.scrollTop = chatLog.scrollHeight;
+                audioPlayer.src = "/static/output.mp3";
+                audioPlayer.style.display = "block";
+                audioPlayer.play().catch(err => console.log("音声再生エラー:", err));
+            })
+            .catch(error => {
+                console.error("通信エラー:", error);
+                chatLog.innerHTML += `<div class="bot">⚠️ エラーが発生しました</div>`;
+            });
         });
-        const data = await res.json();
-        appendMessage(`みまくん: ${data.reply}`, 'bot');
-
-        // 音声再生
-        audioPlayer.src = '/static/output.mp3';
-        audioPlayer.style.display = 'block';
-        await audioPlayer.play();
-      } catch (err) {
-        console.error(err);
-        appendMessage('みまくん: エラーが発生しました。', 'bot');
-      }
-    });
-
-    // 音声認識セットアップ
-    let recognition;
-    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-      recognition = new SR();
-      recognition.lang = 'ja-JP';
-      recognition.interimResults = false;
-      recognition.maxAlternatives = 1;
-
-      recognition.addEventListener('start', () =>
-        micBtn.classList.add('recording')
-      );
-      recognition.addEventListener('end', () =>
-        micBtn.classList.remove('recording')
-      );
-      recognition.addEventListener('result', (e) => {
-        userInput.value = e.results[0][0].transcript;
-        chatForm.dispatchEvent(new Event('submit'));
-      });
-
-      micBtn.addEventListener('click', () => recognition.start());
-    } else {
-      micBtn.disabled = true;
-      micBtn.title = '音声入力非対応のブラウザです';
-    }
-
-    // 過去ログ読み込み（Supabase）
-    window.addEventListener('load', async () => {
-      try {
-        const { data, error } = await supabaseClient
-          .from('conversation_logs')
-          .select('*')
-          .order('created_at', { ascending: true });
-        if (error) throw error;
-        data.forEach(log => {
-          appendMessage(`あなた: ${log.user_message}`, 'user');
-          appendMessage(`みまくん: ${log.bot_response}`, 'bot');
-        });
-      } catch (err) {
-        console.error('Supabase error:', err);
-      }
-    });
-  </script>
+    </script>
 </body>
 </html>

@@ -1,106 +1,74 @@
+
 import os
-from flask import Flask, render_template, request, jsonify, send_file
+import json
+from flask import Flask, request, jsonify, render_template, send_file
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 from flask_cors import CORS
-import io
+from google.cloud import texttospeech
+from dotenv import load_dotenv
 
-# 環境変数読み込み
-openai_api_key = os.getenv("OPENAI_API_KEY")
-supabase_url     = os.getenv("SUPABASE_URL")
-supabase_key     = os.getenv("SUPABASE_KEY")
-google_creds_json = os.getenv("GOOGLE_CREDENTIALS_JSON")
+# .envの読み込み
+load_dotenv()
 
-# Flask アプリ初期化
-app = Flask(
-    __name__,
-    static_folder="static",         # 静的ファイル格納フォルダ
-    template_folder="templates"     # テンプレート格納フォルダ
-)
-# 本番サイトとローカルを許可
-CORS(app, origins=["https://robostudy.jp", "http://localhost:5000"])
+app = Flask(__name__)
+CORS(app, origins=["https://robostudy.jp"])
 
+# レート制限（例：1分に10回まで）
+limiter = Limiter(get_remote_address, app=app, default_limits=["10 per minute"])
 
-def call_openai(user_text: str) -> str:
-    """
-    TODO: OpenAI API 呼び出しを実装してください。
-    例:
-      import openai
-      openai.api_key = openai_api_key
-      resp = openai.ChatCompletion.create(...)
-      return resp.choices[0].message.content
-    """
-    return "ここにAIの応答が入ります"
+# OpenAIとGoogle TTSのキー取得
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+GOOGLE_APPLICATION_CREDENTIALS = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
+assert OPENAI_API_KEY and GOOGLE_APPLICATION_CREDENTIALS
 
-
-def synthesize_speech(text: str) -> bytes:
-    """
-    TODO: Google Cloud Text-to-Speech を呼び出し、MP3 バイト列を返してください。
-    例:
-      from google.cloud import texttospeech
-      creds = json.loads(google_creds_json)
-      client = texttospeech.TextToSpeechClient.from_service_account_info(creds)
-      # synthesis...
-    """
-    return b""
-
+from openai import OpenAI
+openai_client = OpenAI(api_key=OPENAI_API_KEY)
 
 @app.route("/")
-def top():
-    # templates/index.html を返す
-    return render_template("index.html")
-
-
-@app.route("/chatbot")
-def chatbot_page():
-    # templates/chatbot.html を返す
+def index():
     return render_template("chatbot.html")
 
-
-@app.route("/speak", methods=["GET"])
-def speak_page():
-    # templates/speak.html を返す
-    return render_template("speak.html")
-
-
 @app.route("/chat", methods=["POST"])
-def api_chat():
-    data = request.get_json() or {}
-    user_text = data.get("text", "")
-    # AI 応答取得
-    bot_reply = call_openai(user_text)
-    # 音声合成して static/output.mp3 に書き込む
-    audio_bytes = synthesize_speech(user_text)
-    out_path = os.path.join(app.static_folder, "output.mp3")
-    with open(out_path, "wb") as f:
-        f.write(audio_bytes)
-    return jsonify({"reply": bot_reply})
+@limiter.limit("5 per minute")
+def chat():
+    try:
+        user_input = request.json.get("text", "").strip()
+        if len(user_input) > 100:
+            return jsonify({"reply": "申し訳ありませんが、メッセージは100文字以内でお願いいたします。再度短くして送信してください。"})
 
+        # ChatGPT API呼び出し
+        response = openai_client.chat.completions.create(
+            model="gpt-4o",
+            messages=[
+                {"role": "system", "content": "あなたは親切な高齢者支援アシスタントです。"},
+                {"role": "user", "content": user_input}
+            ]
+        )
+        reply_text = response.choices[0].message.content.strip()[:200]  # 応答も200文字以内
+        log_entry = f"User: {user_input}\nBot: {reply_text}\n\n"
+        with open("chatlog.txt", "a", encoding="utf-8") as f:
+            f.write(log_entry)
 
-@app.route("/speak", methods=["POST"])
-def api_speak():
-    data = request.get_json() or {}
-    text = data.get("text", "")
-    audio_bytes = synthesize_speech(text)
-    return send_file(
-        io.BytesIO(audio_bytes),
-        mimetype="audio/mpeg",
-        as_attachment=False,
-        download_name="speech.mp3"
-    )
+        # 音声合成
+        tts_client = texttospeech.TextToSpeechClient()
+        synthesis_input = texttospeech.SynthesisInput(text=reply_text)
+        voice = texttospeech.VoiceSelectionParams(language_code="ja-JP", ssml_gender=texttospeech.SsmlVoiceGender.NEUTRAL)
+        audio_config = texttospeech.AudioConfig(audio_encoding=texttospeech.AudioEncoding.MP3)
+        tts_response = tts_client.synthesize_speech(input=synthesis_input, voice=voice, audio_config=audio_config)
 
+        output_path = "static/output.mp3"
+        with open(output_path, "wb") as out:
+            out.write(tts_response.audio_content)
 
-@app.route("/debug/chatbot-files")
-def debug_files():
-    """
-    デバッグ用: templates フォルダ内のファイル一覧を返す
-    """
-    file_list = []
-    for root, dirs, files in os.walk(app.template_folder):
-        for file in files:
-            rel = os.path.relpath(os.path.join(root, file), app.template_folder)
-            file_list.append(rel)
-    return jsonify(file_list)
+        return jsonify({"reply": reply_text})
+    except Exception as e:
+        print("❌ エラー:", str(e))
+        return jsonify({"reply": "みまくん: エラーが発生しました。"}), 500
 
+@app.route("/logs")
+def logs():
+    return send_file("chatlog.txt", as_attachment=False)
 
 if __name__ == "__main__":
-    port = int(os.getenv("PORT", "5000"))
-    app.run(host="0.0.0.0", port=port)
+    app.run(host="0.0.0.0", port=10000)
