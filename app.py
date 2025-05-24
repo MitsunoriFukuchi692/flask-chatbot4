@@ -1,28 +1,19 @@
 
 import os
-import json
-from flask import Flask, render_template, request, jsonify, send_file
+from flask import Flask, request, jsonify, render_template, send_file
+from flask_cors import CORS
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
-from flask_cors import CORS
-from google.cloud import texttospeech
-from openai import OpenAI
-from pathlib import Path
-import dotenv
-
-# .envファイルの読み込み
-config = dotenv.dotenv_values(Path('.env'))
+import openai
+from gtts import gTTS
 
 app = Flask(__name__)
 CORS(app, origins=["https://robostudy.jp"])
+
 limiter = Limiter(get_remote_address, app=app, default_limits=["5 per minute"])
 
-openai_api_key = os.getenv("OPENAI_API_KEY")
-google_credentials = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
-assert openai_api_key, "OpenAI API key is missing."
-assert google_credentials, "Google Cloud credentials are missing."
-
-openai_client = OpenAI(api_key=config["OPENAI_API_KEY"])
+openai.api_key = os.getenv("OPENAI_API_KEY")
+LOG_FILE = "chatlog.txt"
 
 @app.route("/")
 def index():
@@ -36,57 +27,53 @@ def chatbot():
 def speak():
     return render_template("speak.html")
 
-@app.route("/logs")
-def logs():
-    if os.path.exists("chatlog.txt"):
-        return send_file("chatlog.txt", mimetype="text/plain", as_attachment=True)
-    return "ログファイルが存在しません。", 404
-
 @app.route("/chat", methods=["POST"])
 @limiter.limit("5 per minute")
 def chat():
+    user_text = request.json.get("user_text", "").strip()
+    if not user_text:
+        return jsonify({"error": "メッセージが空です"}), 400
+
+    if len(user_text) > 100:
+        return jsonify({"reply": "申し訳ありませんが、メッセージは100文字以内でお願いいたします。再度短くして送信してください。"}), 200
+
     try:
-        data = json.loads(request.data)
-        user_text = data.get("text", "").strip()
-
-        if len(user_text) > 100:
-            return jsonify({"reply": "みまくん: 申し訳ありませんが、メッセージは100文字以内でお願いいたします。再度短くして送信してください。"})
-
-        messages = [
-            {"role": "system", "content": "あなたは高齢者に寄り添い、親しみやすく丁寧に日本語で応答するロボットです。語尾には少しだけ関西弁が混じることもあります。"},
-            {"role": "user", "content": user_text}
-        ]
-        chat_response = openai_client.chat.completions.create(
-            model="gpt-4o",
-            messages=messages
+        messages = [{"role": "user", "content": user_text}]
+        response = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo",
+            messages=messages,
+            temperature=0.7,
         )
-        reply = chat_response.choices[0].message.content.strip()
+        reply = response.choices[0].message["content"].strip()
         if len(reply) > 200:
-            reply = reply[:200] + "..."
+            reply = reply[:200] + "…"
 
-        # 音声合成
-        tts_client = texttospeech.TextToSpeechClient()
-        synthesis_input = texttospeech.SynthesisInput(text=reply)
-        voice = texttospeech.VoiceSelectionParams(language_code="ja-JP", ssml_gender=texttospeech.SsmlVoiceGender.NEUTRAL)
-        audio_config = texttospeech.AudioConfig(audio_encoding=texttospeech.AudioEncoding.MP3)
-        tts_response = tts_client.synthesize_speech(input=synthesis_input, voice=voice, audio_config=audio_config)
-        
-        os.makedirs("static", exist_ok=True)
-        with open("static/output.mp3", "wb") as out:
-            out.write(tts_response.audio_content)
+        # 音声生成
+        tts = gTTS(reply, lang="ja")
+        tts.save("static/output.mp3")
 
-        # 会話ログ保存
-        with open("chatlog.txt", "a", encoding="utf-8") as log:
+        # ログ保存
+        with open(LOG_FILE, "a", encoding="utf-8") as log:
             log.write(f"ユーザー: {user_text}\n")
-
-🤖 Bot: {reply}
-
-")
+            log.write(f"ボット: {reply}\n")
 
         return jsonify({"reply": reply})
 
     except Exception as e:
-        return jsonify({"reply": f"エラーが発生しました: {str(e)}"}), 500
+        return jsonify({"error": str(e)}), 500
+
+@app.route("/logs", methods=["GET"])
+def get_logs():
+    try:
+        with open(LOG_FILE, "r", encoding="utf-8") as f:
+            logs = f.read()
+        return f"<pre>{logs}</pre>"
+    except FileNotFoundError:
+        return "ログファイルが見つかりません。"
+
+@app.route("/download_logs", methods=["GET"])
+def download_logs():
+    return send_file(LOG_FILE, as_attachment=True)
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=10000)
