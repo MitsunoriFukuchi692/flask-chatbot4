@@ -16,11 +16,13 @@ app = Flask(
 
 @app.route("/")
 def index_ja():
-    return render_template("index.html")
+    # templates/ja/index.html を参照
+    return render_template("ja/index.html")
 
 @app.route("/en/")
 def index_en():
-    return render_template("index_en.html")
+    # templates/en/index.html を参照
+    return render_template("en/index.html")
 
 @app.route("/chat", methods=["POST"])
 def chat():
@@ -39,7 +41,6 @@ def chat():
     reply_text = completion.choices[0].message.content
 
     # 2) Google TTS 呼び出し
-    #    GOOGLE_APPLICATION_CREDENTIALS を自動で参照
     tts_client = texttospeech.TextToSpeechClient()
     synthesis_input = texttospeech.SynthesisInput(text=reply_text)
     voice = texttospeech.VoiceSelectionParams(
