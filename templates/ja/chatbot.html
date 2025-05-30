@@ -1,104 +1,58 @@
-
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>AIみまくんチャット</title>
-    <style>
-        body {
-            font-family: sans-serif;
-            margin: 0;
-            padding: 0;
-            background: #f5f5f5;
-        }
-        .container {
-            max-width: 600px;
-            margin: auto;
-            padding: 1rem;
-            background: #fff;
-            box-shadow: 0 0 8px rgba(0,0,0,0.1);
-        }
-        h1 {
-            font-size: 1.5rem;
-            color: #333;
-            margin-bottom: 1rem;
-        }
-        textarea {
-            width: 100%;
-            height: 100px;
-            font-size: 1rem;
-        }
-        button {
-            margin-top: 0.5rem;
-            padding: 0.5rem 1rem;
-            font-size: 1rem;
-        }
-        .chat-log {
-            margin-top: 1rem;
-            background: #f9f9f9;
-            padding: 1rem;
-            height: 300px;
-            overflow-y: auto;
-            border: 1px solid #ddd;
-        }
-        .user, .bot {
-            margin-bottom: 0.75rem;
-        }
-        .user::before {
-            content: "👤 ユーザー: ";
-            font-weight: bold;
-        }
-        .bot::before {
-            content: "🤖 みまくん: ";
-            font-weight: bold;
-        }
-        audio {
-            display: block;
-            margin-top: 1rem;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <title>AIみまくん チャットボット</title>
+  <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
-    <div class="container">
-        <h1>AIみまくん チャットボット</h1>
-        <form id="chatForm">
-            <textarea id="userInput" maxlength="100" placeholder="100文字以内で入力してください..."></textarea><br />
-            <button type="submit">送信</button>
-        </form>
-        <div class="chat-log" id="chatLog"></div>
-        <audio id="audioPlayer" controls style="display:none;"></audio>
-    </div>
+  <h1>AIみまくん チャットボット</h1>
 
-    <script>
-        const chatForm = document.getElementById("chatForm");
-        const chatLog = document.getElementById("chatLog");
-        const audioPlayer = document.getElementById("audioPlayer");
+  <form id="chat-form">
+    <input
+      id="user-input"
+      type="text"
+      placeholder="100文字以内で入力してください…"
+      maxlength="100"
+      required
+    >
+    <button type="submit">送信</button>
+  </form>
 
-        chatForm.addEventListener("submit", function(e) {
-            e.preventDefault();
-            const input = document.getElementById("userInput").value.trim();
-            if (!input) return;
-            document.getElementById("userInput").value = "";
-            chatLog.innerHTML += `<div class="user">${input}</div>`;
-            fetch("/chat", {
-                method: "POST",
-                headers: {"Content-Type": "application/json"},
-                body: JSON.stringify({ text: input })
-            })
-            .then(response => response.json())
-            .then(data => {
-                chatLog.innerHTML += `<div class="bot">${data.reply}</div>`;
-                chatLog.scrollTop = chatLog.scrollHeight;
-                audioPlayer.src = "/static/output.mp3";
-                audioPlayer.style.display = "block";
-                audioPlayer.play().catch(err => console.log("音声再生エラー:", err));
-            })
-            .catch(error => {
-                console.error("通信エラー:", error);
-                chatLog.innerHTML += `<div class="bot">⚠️ エラーが発生しました</div>`;
-            });
+  <div id="chat-log"></div>
+  <audio id="audio-player" controls style="display:none;"></audio>
+
+  <script>
+    const chatForm   = document.getElementById("chat-form");
+    const userInput  = document.getElementById("user-input");
+    const chatLog    = document.getElementById("chat-log");
+    const audioPlayer= document.getElementById("audio-player");
+
+    chatForm.addEventListener("submit", async e => {
+      e.preventDefault();
+      const text = userInput.value.trim();
+      if (!text) return;
+      userInput.value = "";
+      chatLog.innerHTML += `<div class="user">ユーザー: ${text}</div>`;
+      try {
+        const res  = await fetch("/ask", {
+          method: "POST",
+          headers: {"Content-Type":"application/json"},
+          body: JSON.stringify({ message: text })
         });
-    </script>
+        const data = await res.json();
+        chatLog.innerHTML += `<div class="bot">みまくん: ${data.response}</div>`;
+        chatLog.scrollTop = chatLog.scrollHeight;
+        // TTS音声があれば再生
+        audioPlayer.src = "/static/output.mp3";
+        audioPlayer.style.display = "block";
+        await audioPlayer.play();
+      } catch(err) {
+        console.error(err);
+        chatLog.innerHTML += `<div class="bot">⚠️ エラーが発生しました</div>`;
+        chatLog.scrollTop = chatLog.scrollHeight;
+      }
+    });
+  </script>
 </body>
 </html>
