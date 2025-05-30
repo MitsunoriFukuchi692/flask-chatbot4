@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>テストページ一覧</title>
+</head>
+<body>
+  <h1>サイト内テスト用リンク一覧</h1>
+  <ul>
+    <li><a href="{{ url_for('index') }}">日本語トップ ( / )</a></li>
+    <li><a href="{{ url_for('serve_chatbot') }}">日本語チャット ( /chatbot.html )</a></li>
+    <li><a href="{{ url_for('en_index') }}">英語トップ ( /en/ )</a></li>
+    <li><a href="{{ url_for('en_chatbot') }}">英語チャット ( /en/chatbot.html )</a></li>
+    <!-- ほかに追加する新ページへのリンクもここにずらっと並べておく -->
+  </ul>
+</body>
+</html>

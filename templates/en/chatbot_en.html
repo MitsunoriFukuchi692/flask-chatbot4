@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>AI Mimakun Chatbot</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            margin: 0;
+            padding: 0;
+            background: #f5f5f5;
+        }
+        .container {
+            max-width: 600px;
+            margin: auto;
+            padding: 1rem;
+            background: #fff;
+            box-shadow: 0 0 8px rgba(0,0,0,0.1);
+        }
+        h1 {
+            font-size: 1.5rem;
+            color: #333;
+            margin-bottom: 1rem;
+        }
+        textarea {
+            width: 100%;
+            height: 100px;
+            font-size: 1rem;
+        }
+        button {
+            margin-top: 0.5rem;
+            padding: 0.5rem 1rem;
+            font-size: 1rem;
+        }
+        .chat-log {
+            margin-top: 1rem;
+            background: #f9f9f9;
+            padding: 1rem;
+            height: 300px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+        }
+        .user::before {
+            content: "👤 You: ";
+            font-weight: bold;
+        }
+        .bot::before {
+            content: "🤖 Mimakun: ";
+            font-weight: bold;
+        }
+        .user, .bot {
+            margin-bottom: 0.75rem;
+        }
+        audio {
+            display: block;
+            margin-top: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>AI Mimakun Chatbot</h1>
+        <form id="chatForm">
+            <textarea id="userInput" maxlength="100" placeholder="Enter your message (max 100 characters)..."></textarea><br />
+            <button type="submit">Send</button>
+        </form>
+        <div class="chat-log" id="chatLog"></div>
+        <audio id="audioPlayer" controls style="display:none;"></audio>
+    </div>
+
+    <script>
+        const chatForm = document.getElementById("chatForm");
+        const chatLog = document.getElementById("chatLog");
+        const audioPlayer = document.getElementById("audioPlayer");
+
+        chatForm.addEventListener("submit", function(e) {
+            e.preventDefault();
+            const input = document.getElementById("userInput").value.trim();
+            if (!input) return;
+            document.getElementById("userInput").value = "";
+            chatLog.innerHTML += `<div class="user">${input}</div>`;
+            fetch("/chat", {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({ text: input })
+            })
+            .then(response => response.json())
+            .then(data => {
+                chatLog.innerHTML += `<div class="bot">${data.reply}</div>`;
+                chatLog.scrollTop = chatLog.scrollHeight;
+                audioPlayer.src = "/static/output.mp3";
+                audioPlayer.style.display = "block";
+                audioPlayer.play().catch(err => console.log("Audio play error:", err));
+            })
+            .catch(error => {
+                console.error("Error:", error);
+                chatLog.innerHTML += `<div class="bot">⚠️ An error occurred</div>`;
+            });
+        });
+    </script>
+</body>
+</html>
