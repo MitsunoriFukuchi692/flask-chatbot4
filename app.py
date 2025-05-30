@@ -1,30 +1,32 @@
-from flask import Flask, render_template, request, jsonify
-import openai
 import os
+from flask import Flask, render_template, request, jsonify
 
-app = Flask(__name__)
+app = Flask(
+    __name__,
+    static_folder="static",
+    template_folder="templates"  # デフォルトですが、念のため明示します
+)
 
-# OpenAI APIキーの読み込み（Renderの環境変数を使用）
-openai.api_key = os.getenv("OPENAI_API_KEY")
+# ---- 日本語トップページ ----
+@app.route("/")
+def index_ja():
+    # サブフォルダ付きでテンプレートを指定
+    return render_template("ja/chatbot.html")
 
-@app.route('/')
-def index():
-    return render_template('chatbot.html')
+# ---- 英語トップページ ----
+@app.route("/en/")
+def index_en():
+    return render_template("en/chatbot.html")
 
-@app.route('/ask', methods=['POST'])
+# ---- チャット用APIエンドポイント ----
+@app.route("/ask", methods=["POST"])
 def ask():
-    user_message = request.json.get("message")
-    
-    try:
-        response = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",
-            messages=[{"role": "user", "content": user_message}]
-        )
-        answer = response['choices'][0]['message']['content']
-        return jsonify({"response": answer})
-    
-    except Exception as e:
-        return jsonify({"error": str(e)})
+    data = request.get_json()
+    message = data.get("message")
+    # … ここに OpenAI API コール等のロジック …
+    response_text = "（生成された返答）"
+    return jsonify({"response": response_text})
 
-if __name__ == '__main__':
-    app.run(debug=True)
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)
