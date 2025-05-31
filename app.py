@@ -4,32 +4,41 @@ from flask import Flask, render_template, request, jsonify
 import openai
 from google.cloud import texttospeech
 
-# 環境変数から OpenAI API キーを取得
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
-# Flask アプリを初期化（templates フォルダをそのまま使う）
 app = Flask(__name__,
             static_folder="static",
             template_folder="templates")
 
-# 日本語トップ（templates/ja/index.html）
+# 日本語トップページ
 @app.route("/", methods=["GET"])
 def index_ja():
     return render_template("ja/index.html")
 
-# 英語トップ（templates/en/index.html）
+# 英語トップページ
 @app.route("/en", methods=["GET"])
 def index_en():
     return render_template("en/index.html")
 
-# チャット API
+# 日本語用チャットUI（iframeの中身）
+@app.route("/chatbot", methods=["GET"])
+def chatbot_ja():
+    # templates/ja/chatbot.html を返す
+    return render_template("ja/chatbot.html")
+
+# 英語用チャットUI
+@app.route("/chatbot_en", methods=["GET"])
+def chatbot_en():
+    # templates/en/chatbot.html を返す
+    return render_template("en/chatbot.html")
+
+# AJAX POST を受ける本体ロジック
 @app.route("/chat", methods=["POST"])
 def chat():
     data = request.get_json()
     user_text = data.get("message", "")
     lang = data.get("lang", "ja")
 
-    # 1) OpenAI ChatCompletion
     completion = openai.ChatCompletion.create(
         model="gpt-4o-mini",
         messages=[
@@ -39,7 +48,6 @@ def chat():
     )
     reply_text = completion.choices[0].message.content
 
-    # 2) Google TTS
     tts_client = texttospeech.TextToSpeechClient()
     synthesis_input = texttospeech.SynthesisInput(text=reply_text)
     voice = texttospeech.VoiceSelectionParams(
@@ -55,15 +63,13 @@ def chat():
         audio_config=audio_config
     )
 
-    # 3) MP3 を保存
     audio_dir = os.path.join(app.static_folder, "audio")
     os.makedirs(audio_dir, exist_ok=True)
     filename = f"{uuid.uuid4().hex}.mp3"
-    path = os.path.join(audio_dir, filename)
-    with open(path, "wb") as f:
+    audio_path = os.path.join(audio_dir, filename)
+    with open(audio_path, "wb") as f:
         f.write(tts_response.audio_content)
 
-    # 4) 結果を JSON 返却
     return jsonify({
         "text": reply_text,
         "audio_url": f"/static/audio/{filename}"
