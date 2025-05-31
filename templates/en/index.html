@@ -1,18 +1,21 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-BKSCQLEW8Y"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-BKSCQLEW8Y');
-</script>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Robo Study Inc. - Innovative AI solutions with AI Mimakun, your intelligent companion for elderly care and daily assistance. Experience the future of human-robot coexistence.">
-    <meta name="keywords" content="AI Mimakun, elderly care robot, companion robot, AI technology, healthcare robot">
-    <title>AI Mimakun - Advanced Care Robot | Robo Study Inc.</title>
+    <meta charset="UTF-8" />
+    <meta 
+      name="viewport" 
+      content="width=device-width, initial-scale=1.0" 
+    />
+    <meta 
+      name="description" 
+      content="Robo Study Inc. - Innovative AI solutions with AI Mimakun, your intelligent companion for elderly care and daily assistance. Experience the future of human-robot coexistence."
+    />
+    <meta 
+      name="keywords" 
+      content="AI Mimakun, elderly care robot, companion robot, AI technology, healthcare robot"
+    />
+    <title>AI Mimakun – Advanced Care Robot | Robo Study Inc.</title>
+
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -22,19 +25,19 @@
             line-height: 1.6;
             color: #333;
         }
-        
+
         header {
             background: linear-gradient(135deg, #5ca37e, #4a8663);
             color: white;
             text-align: center;
             padding: 50px 20px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
 
         header h1 {
             margin: 0;
             font-size: 2.2em;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
         }
 
         header p {
@@ -69,7 +72,7 @@
             background-color: #333;
             padding: 15px;
             text-align: center;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
             display: flex;
             justify-content: center;
             flex-wrap: wrap;
@@ -93,7 +96,7 @@
         nav a:hover {
             background-color: #4a8663;
             transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
         }
 
         main {
@@ -108,7 +111,7 @@
             background: white;
             padding: 40px;
             border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
         }
 
         .hero-section h2 {
@@ -130,7 +133,7 @@
             padding: 40px;
             background: white;
             border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
         }
 
         .video-section h2 {
@@ -168,7 +171,7 @@
             background: white;
             padding: 30px;
             border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
             transition: transform 0.3s ease;
         }
 
@@ -217,7 +220,7 @@
             border-radius: 8px;
             margin: 40px 0;
             text-align: center;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
 
         .pdf-section h2 {
@@ -253,7 +256,7 @@
             max-width: 100%;
             height: auto;
             border-radius: 8px;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         }
 
         footer {
@@ -267,7 +270,7 @@
         .contact-info {
             margin-top: 20px;
             padding-top: 20px;
-            border-top: 1px solid rgba(255,255,255,0.1);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
             max-width: 800px;
             margin: 20px auto 0;
         }
@@ -292,7 +295,7 @@
             }
 
             nav a {
-            transform: scale(0.9);
+                transform: scale(0.9);
                 width: 100%;
                 margin: 5px 0;
             }
@@ -301,7 +304,7 @@
                 grid-template-columns: 1fr;
             }
 
-            .hero-section, 
+            .hero-section,
             .video-section,
             .pdf-section {
                 padding: 20px;
@@ -315,9 +318,10 @@
     </style>
 </head>
 <body>
+    <!-- 言語切り替えリンク -->
     <div class="language-selector">
-        <a href="index.html">日本語</a>
-        <a href="index_en.html">English</a>
+        <a href="{{ url_for('index_ja') }}">日本語</a>
+        <a href="{{ url_for('index_en') }}">English</a>
     </div>
 
     <header>
@@ -326,19 +330,24 @@
     </header>
 
     <nav>
-        <a href="chatbot_en.html" target="_blank" style="background-color: #fffccc; color: black;">ChatbotAI</a>
+        <!-- ChatbotAI ボタン：/chatbot_en へリンク -->
+        <a href="{{ url_for('chatbot_en') }}" 
+           style="background-color: #fffccc; color: black;">
+            ChatbotAI
+        </a>
         <a href="feature1_en.html">About Mimakun</a>
         <a href="feature2_en.html">Products</a>
         <a href="service1_en.html">Services</a>
         <a href="mailto:info@robostudy.jp">Contact</a>
     </nav>
+
     <div style="text-align: center; margin: 30px;">
-        <a href="chat_tts_client.html" target="_blank"
+        <!-- Talk with AI (Voice Chat) ボタンも /chatbot_en → targetなしで同じタブ内に開く -->
+        <a href="{{ url_for('chatbot_en') }}"
            style="display: inline-block; padding: 12px 24px; background: #fffbcc; color: #333; border: 2px solid #aaa; border-radius: 6px; text-decoration: none; font-weight: bold;">
            🔊 Talk with AI (Voice Chat)
         </a>
     </div>
-
 
     <main>
         <section class="hero-section">
@@ -350,7 +359,7 @@
             <h2>See AI Mimakun in Action</h2>
             <div class="video-container">
                 <video controls>
-                    <source src="Elderly People Asist in English (1).mp4" type="video/mp4">
+                    <source src="Elderly%20People%20Assist%20in%20English%20(1).mp4" type="video/mp4" />
                     Your browser does not support the video tag.
                 </video>
             </div>
@@ -381,13 +390,13 @@
 
         <div class="pdf-section">
             <h2>Download Information</h2>
-            <a href="What is AI・Mimakun.pdf" target="_blank" class="pdf-link">What is AI・Mimakun (PDF)</a>
-            <a href="Background of AiMimakun.pdf" target="_blank" class="pdf-link">Background of AI Mimakun (PDF)</a>
-            <a href="Company Products.pdf" target="_blank" class="pdf-link">Company Products (PDF)</a>
+            <a href="What%20is%20AI%E3%83%BBMimakun.pdf" target="_blank" class="pdf-link">What is AI・Mimakun (PDF)</a>
+            <a href="Background%20of%20AiMimakun.pdf" target="_blank" class="pdf-link">Background of AI Mimakun (PDF)</a>
+            <a href="Company%20Products.pdf" target="_blank" class="pdf-link">Company Products (PDF)</a>
         </div>
 
         <div class="image-section">
-            <img src="mimakun_450_en.png" alt="AI Mimakun - Your Intelligent Companion">
+            <img src="mimakun_450_en.png" alt="AI Mimakun - Your Intelligent Companion" />
         </div>
     </main>
 
