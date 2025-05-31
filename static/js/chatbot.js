@@ -8,7 +8,7 @@ chatForm.addEventListener("submit", async e => {
   const text = userInput.value.trim();
   if (!text) return;
   userInput.value = "";
-  chatLog.innerHTML += `<div class="user">You: ${text}</div>`;
+  chatLog.innerHTML += `<div class="user">ユーザー: ${text}</div>`;
 
   try {
     // エンドポイントを /chat に変更
@@ -20,7 +20,7 @@ chatForm.addEventListener("submit", async e => {
     const data = await res.json();
 
     // レスポンス内の JSON キー名に合わせて表示
-    chatLog.innerHTML += `<div class="bot">Mima-kun: ${data.text}</div>`;
+    chatLog.innerHTML += `<div class="bot">みまくん: ${data.text}</div>`;
     chatLog.scrollTop = chatLog.scrollHeight;
 
     // audio_url を直接使う

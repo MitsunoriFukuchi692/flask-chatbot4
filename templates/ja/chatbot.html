@@ -1,58 +1,39 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>AIみまくん チャットボット</title>
-  <link rel="stylesheet" href="/static/style.css">
+  <link
+    rel="stylesheet"
+    href="{{ url_for('static', filename='style.css') }}"
+  />
 </head>
 <body>
   <h1>AIみまくん チャットボット</h1>
 
+  <!-- チャット履歴 -->
+  <div id="chat-log"></div>
+
+  <!-- 入力フォーム -->
   <form id="chat-form">
     <input
       id="user-input"
       type="text"
-      placeholder="100文字以内で入力してください…"
+      placeholder="100文字以内で入力してください"
       maxlength="100"
-      required
-    >
+      autocomplete="off"
+    />
     <button type="submit">送信</button>
   </form>
 
-  <div id="chat-log"></div>
-  <audio id="audio-player" controls style="display:none;"></audio>
+  <!-- 音声プレーヤー -->
+  <audio
+    id="audio-player"
+    controls
+    style="display: none;"
+  ></audio>
 
-  <script>
-    const chatForm   = document.getElementById("chat-form");
-    const userInput  = document.getElementById("user-input");
-    const chatLog    = document.getElementById("chat-log");
-    const audioPlayer= document.getElementById("audio-player");
-
-    chatForm.addEventListener("submit", async e => {
-      e.preventDefault();
-      const text = userInput.value.trim();
-      if (!text) return;
-      userInput.value = "";
-      chatLog.innerHTML += `<div class="user">ユーザー: ${text}</div>`;
-      try {
-        const res  = await fetch("/ask", {
-          method: "POST",
-          headers: {"Content-Type":"application/json"},
-          body: JSON.stringify({ message: text })
-        });
-        const data = await res.json();
-        chatLog.innerHTML += `<div class="bot">みまくん: ${data.response}</div>`;
-        chatLog.scrollTop = chatLog.scrollHeight;
-        // TTS音声があれば再生
-        audioPlayer.src = "/static/output.mp3";
-        audioPlayer.style.display = "block";
-        await audioPlayer.play();
-      } catch(err) {
-        console.error(err);
-        chatLog.innerHTML += `<div class="bot">⚠️ エラーが発生しました</div>`;
-        chatLog.scrollTop = chatLog.scrollHeight;
-      }
-    });
-  </script>
+  <!-- JavaScript -->
+  <script src="{{ url_for('static', filename='js/chatbot.js') }}"></script>
 </body>
 </html>

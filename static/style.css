@@ -1,0 +1,52 @@
+body {
+  font-family: Arial, sans-serif;
+  margin: 16px;
+  line-height: 1.6;
+}
+
+h1 {
+  font-size: 1.8em;
+  margin-bottom: 12px;
+}
+
+#chat-log {
+  border: 1px solid #ccc;
+  padding: 8px;
+  height: 400px;
+  overflow-y: auto;
+  background: #f9f9f9;
+  margin-bottom: 12px;
+}
+
+#chat-log .user {
+  color: #0066cc;
+  margin: 4px 0;
+}
+
+#chat-log .bot {
+  color: #333333;
+  margin: 4px 0;
+}
+
+#chat-form {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+#user-input {
+  flex: 1;
+  padding: 8px;
+  font-size: 1em;
+}
+
+#chat-form button {
+  padding: 8px 16px;
+  font-size: 1em;
+  cursor: pointer;
+}
+
+#audio-player {
+  width: 100%;
+  margin-top: 8px;
+}
