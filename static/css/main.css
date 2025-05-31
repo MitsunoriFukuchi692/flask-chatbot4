@@ -1,0 +1,14 @@
+<ul style="list-style: none; display: flex; gap: 1rem; padding: 0;">
+  <li><a href="/">ホーム</a></li>
+  <li><a href="/about">About</a></li>
+  <li><a href="/products">Products</a></li>
+  <li><a href="/services">Services</a></li>
+  <li><a href="/contact">Contact</a></li>
+  <li><a href="/chatbot">Chatbot</a></li>
+  <li><a href="/en">English</a></li>
+</ul>
+
+<section>
+  <h1>ようこそ、AIみまくんチャットボットへ！</h1>
+  <p>このサイトでは、AIみまくんと会話をしながら音声で返答を聞くことができます。下のチャットエリアで、ぜひお試しください。</p>
+</section>
