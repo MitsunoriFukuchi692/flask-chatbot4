@@ -241,7 +241,7 @@
             transition: all 0.3s ease;
         }
 
-        .pdf-link:hover {
+        .pdf-link:hover {  
             background-color: #5ca37e;
             color: white;
             transform: translateY(-2px);
@@ -330,7 +330,7 @@
     </header>
 
     <nav>
-        <!-- ChatbotAI ボタン：/chatbot_en へリンク -->
+        <!-- ChatbotAI ボタン：必ず /chatbot_en にリンク -->
         <a href="{{ url_for('chatbot_en') }}" 
            style="background-color: #fffccc; color: black;">
             ChatbotAI
@@ -342,7 +342,7 @@
     </nav>
 
     <div style="text-align: center; margin: 30px;">
-        <!-- Talk with AI (Voice Chat) ボタンも /chatbot_en → targetなしで同じタブ内に開く -->
+        <!-- Talk with AI (Voice Chat) も /chatbot_en へ飛ぶ -->
         <a href="{{ url_for('chatbot_en') }}"
            style="display: inline-block; padding: 12px 24px; background: #fffbcc; color: #333; border: 2px solid #aaa; border-radius: 6px; text-decoration: none; font-weight: bold;">
            🔊 Talk with AI (Voice Chat)
