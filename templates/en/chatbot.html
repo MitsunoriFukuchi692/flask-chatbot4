@@ -1,35 +1,82 @@
-const chatForm    = document.getElementById("chat-form");
-const userInput   = document.getElementById("user-input");
-const chatLog     = document.getElementById("chat-log");
-const audioPlayer = document.getElementById("audio-player");
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta 
+    name="viewport" 
+    content="width=device-width, initial-scale=1.0" 
+  />
+  <title>AI Mimakun Chatbot</title>
+  <!-- 同じスタイルシートを使う -->
+  <link
+    rel="stylesheet"
+    href="{{ url_for('static', filename='style.css') }}"
+  />
+</head>
+<body>
+  <h1>AI Mimakun Chatbot</h1>
 
-chatForm.addEventListener("submit", async e => {
-  e.preventDefault();
-  const text = userInput.value.trim();
-  if (!text) return;
-  userInput.value = "";
-  chatLog.innerHTML += `<div class="user">You: ${text}</div>`;
+  <!-- チャット履歴 -->
+  <div id="chat-log"></div>
 
-  try {
-    // エンドポイントを /chat に変更
-    const res  = await fetch("/chat", {
-      method: "POST",
-      headers: {"Content-Type":"application/json"},
-      body: JSON.stringify({ message: text })
+  <!-- 入力フォーム -->
+  <form id="chat-form">
+    <input
+      id="user-input"
+      type="text"
+      placeholder="Enter up to 100 characters"
+      maxlength="100"
+      autocomplete="off"
+    />
+    <button type="submit">Send</button>
+  </form>
+
+  <!-- オーディオプレーヤー -->
+  <audio
+    id="audio-player"
+    controls
+    style="display: none;"
+  ></audio>
+
+  <!-- ここから JavaScript を必ず <script> タグで囲む -->
+  <script>
+    const chatForm    = document.getElementById("chat-form");
+    const userInput   = document.getElementById("user-input");
+    const chatLog     = document.getElementById("chat-log");
+    const audioPlayer = document.getElementById("audio-player");
+
+    chatForm.addEventListener("submit", async e => {
+      e.preventDefault();
+      const text = userInput.value.trim();
+      if (!text) return;
+      userInput.value = "";
+      chatLog.innerHTML += `<div class="user">You: ${text}</div>`;
+
+      try {
+        // エンドポイントは /chat にPOST
+        const res  = await fetch("/chat", {
+          method: "POST",
+          headers: {"Content-Type":"application/json"},
+          body: JSON.stringify({ message: text, lang: "en" })
+        });
+        const data = await res.json();
+
+        // 返ってきた JSON の text を表示
+        chatLog.innerHTML += `<div class="bot">Mima-kun: ${data.text}</div>`;
+        chatLog.scrollTop = chatLog.scrollHeight;
+
+        // 返ってきた audio_url を再生
+        audioPlayer.src = data.audio_url;
+        audioPlayer.style.display = "block";
+        await audioPlayer.play();
+      } catch(err) {
+        console.error(err);
+        chatLog.innerHTML += `<div class="bot">⚠️ An error occurred</div>`;
+        chatLog.scrollTop = chatLog.scrollHeight;
+      }
     });
-    const data = await res.json();
+  </script>
+  <!-- ここまで JavaScript -->
 
-    // レスポンス内の JSON キー名に合わせて表示
-    chatLog.innerHTML += `<div class="bot">Mima-kun: ${data.text}</div>`;
-    chatLog.scrollTop = chatLog.scrollHeight;
-
-    // audio_url を直接使う
-    audioPlayer.src = data.audio_url;
-    audioPlayer.style.display = "block";
-    await audioPlayer.play();
-  } catch(err) {
-    console.error(err);
-    chatLog.innerHTML += `<div class="bot">⚠️ エラーが発生しました</div>`;
-    chatLog.scrollTop = chatLog.scrollHeight;
-  }
-});
+</body>
+</html>
