@@ -7,30 +7,29 @@ from google.cloud import texttospeech
 # 環境変数から OpenAI API キーを取得
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
-# Flask アプリの初期化
-app = Flask(
-    __name__,
-    static_folder="static",
-    template_folder="templates"
-)
+# Flask アプリを初期化（templates フォルダをそのまま使う）
+app = Flask(__name__,
+            static_folder="static",
+            template_folder="templates")
 
-@app.route("/")
+# 日本語トップ（templates/ja/index.html）
+@app.route("/", methods=["GET"])
 def index_ja():
-    # templates/ja/index.html を参照
     return render_template("ja/index.html")
 
-@app.route("/en/")
+# 英語トップ（templates/en/index.html）
+@app.route("/en", methods=["GET"])
 def index_en():
-    # templates/en/index.html を参照
     return render_template("en/index.html")
 
+# チャット API
 @app.route("/chat", methods=["POST"])
 def chat():
     data = request.get_json()
     user_text = data.get("message", "")
     lang = data.get("lang", "ja")
 
-    # 1) OpenAI ChatCompletion 呼び出し
+    # 1) OpenAI ChatCompletion
     completion = openai.ChatCompletion.create(
         model="gpt-4o-mini",
         messages=[
@@ -40,7 +39,7 @@ def chat():
     )
     reply_text = completion.choices[0].message.content
 
-    # 2) Google TTS 呼び出し
+    # 2) Google TTS
     tts_client = texttospeech.TextToSpeechClient()
     synthesis_input = texttospeech.SynthesisInput(text=reply_text)
     voice = texttospeech.VoiceSelectionParams(
@@ -56,15 +55,15 @@ def chat():
         audio_config=audio_config
     )
 
-    # 3) MP3 ファイルを static/audio/ 配下に保存
+    # 3) MP3 を保存
     audio_dir = os.path.join(app.static_folder, "audio")
     os.makedirs(audio_dir, exist_ok=True)
     filename = f"{uuid.uuid4().hex}.mp3"
-    audio_path = os.path.join(audio_dir, filename)
-    with open(audio_path, "wb") as f:
+    path = os.path.join(audio_dir, filename)
+    with open(path, "wb") as f:
         f.write(tts_response.audio_content)
 
-    # 4) クライアントへテキストと音声 URL を返却
+    # 4) 結果を JSON 返却
     return jsonify({
         "text": reply_text,
         "audio_url": f"/static/audio/{filename}"
