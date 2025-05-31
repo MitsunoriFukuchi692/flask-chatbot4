@@ -4,248 +4,151 @@ from flask import Flask, render_template, request, jsonify
 import openai
 from google.cloud import texttospeech
 
-# ── 環境変数から API キーを取得 ──
-#  - OpenAI の API キーをあらかじめ環境変数 OPENAI_API_KEY にセットしておきます。
-#  - Google TTS は、アプリケーション側で GOOGLE_APPLICATION_CREDENTIALS 環境変数に
-#    サービスアカウントの JSON キーのパスを渡しておくか、Workload Identity を利用する方法でも OK。
+# OpenAI API キーを環境変数から取得
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
-# ── Flask アプリ初期化 ──
+# Flask アプリの初期化
 app = Flask(
     __name__,
-    static_folder="static",      # static/ 以下のファイルはそのまま配信される
-    template_folder="templates"  # templates/ 以下の .html ファイルがテンプレート
+    static_folder="static",
+    template_folder="templates"
 )
 
-# ──────────────────────────────────────────
-#  1) 日本語版 ページルート定義
-# ──────────────────────────────────────────
-
+# ── 日本語トップページ ──
 @app.route("/", methods=["GET"])
-def home_ja():
-    """
-    日本語トップページ → templates/ja/index.html を返す
-    URL: /
-    """
+def index_ja():
     return render_template("ja/index.html")
 
 
-@app.route("/about", methods=["GET"])
-def about_ja():
-    """
-    日本語 About ページ → templates/ja/about.html を返す
-    URL: /about
-    """
-    return render_template("ja/about.html")
-
-
-@app.route("/products", methods=["GET"])
-def products_ja():
-    """
-    日本語 Products（製品紹介） → templates/ja/products.html を返す
-    URL: /products
-    """
-    return render_template("ja/products.html")
-
-
-@app.route("/services", methods=["GET"])
-def services_ja():
-    """
-    日本語 Services（サービス紹介） → templates/ja/services.html を返す
-    URL: /services
-    """
-    return render_template("ja/services.html")
-
-
-@app.route("/contact", methods=["GET"])
-def contact_ja():
-    """
-    日本語 Contact（お問い合わせ） → templates/ja/contact.html を返す
-    URL: /contact
-    """
-    return render_template("ja/contact.html")
-
-
+# ── 日本語チャット画面 ──
 @app.route("/chatbot", methods=["GET"])
-@app.route("/chatbot/", methods=["GET"])
 def chatbot_ja():
-    """
-    日本語チャットボット UI → templates/ja/chatbot.html を返す
-    URL: /chatbot or /chatbot/
-    """
     return render_template("ja/chatbot.html")
 
 
-# もし他に日本語のページがあれば、同様に @app.route()→render_template("ja/○○.html") を追加します。
+# ── 日本語 About ページ ──
+@app.route("/about", methods=["GET"])
+def about_ja():
+    return render_template("ja/about.html")
 
 
-# ──────────────────────────────────────────
-#  2) 英語版 ページルート定義
-# ──────────────────────────────────────────
-
-@app.route("/en", methods=["GET"])
-@app.route("/en/", methods=["GET"])
-def home_en():
-    """
-    英語トップページ → templates/en/index.html を返す
-    URL: /en or /en/
-    """
-    return render_template("en/index.html")
+# ── 日本語 Products ページ ──
+@app.route("/products", methods=["GET"])
+def products_ja():
+    return render_template("ja/products.html")
 
 
-@app.route("/en/about", methods=["GET"])
-@app.route("/en/about/", methods=["GET"])
-def about_en():
-    """
-    英語 About ページ → templates/en/about.html を返す
-    URL: /en/about or /en/about/
-    """
-    return render_template("en/about.html")
+# ── 日本語 Services ページ ──
+@app.route("/services", methods=["GET"])
+def services_ja():
+    return render_template("ja/services.html")
 
 
-@app.route("/en/products", methods=["GET"])
-@app.route("/en/products/", methods=["GET"])
-def products_en():
-    """
-    英語 Products ページ → templates/en/products.html を返す
-    URL: /en/products or /en/products/
-    """
-    return render_template("en/products.html")
+# ── 日本語 Contact ページ ──
+@app.route("/contact", methods=["GET"])
+def contact_ja():
+    return render_template("ja/contact.html")
 
 
-@app.route("/en/services", methods=["GET"])
-@app.route("/en/services/", methods=["GET"])
-def services_en():
-    """
-    英語 Services ページ → templates/en/services.html を返す
-    URL: /en/services or /en/services/
-    """
-    return render_template("en/services.html")
-
-
-@app.route("/en/contact", methods=["GET"])
-@app.route("/en/contact/", methods=["GET"])
-def contact_en():
-    """
-    英語 Contact ページ → templates/en/contact.html を返す
-    URL: /en/contact or /en/contact/
-    """
-    return render_template("en/contact.html")
-
-
-@app.route("/en/chatbot_en", methods=["GET"])
-@app.route("/en/chatbot_en/", methods=["GET"])
-def chatbot_en():
-    """
-    英語チャットボット UI → templates/en/chatbot.html を返す
-    URL: /en/chatbot_en or /en/chatbot_en/
-    """
-    return render_template("en/chatbot.html")
-
-
-# もし他に英語のページがあれば、同様に @app.route()→render_template("en/○○.html") を追加します。
-
-
-# ──────────────────────────────────────────
-#  3) チャットボット用 AJAX POST エンドポイント
-# ──────────────────────────────────────────
-
+# ── チャット用エンドポイント ──
 @app.route("/chat", methods=["POST"])
 def chat():
     """
-    フロントエンド (chatbot.js) からの POST を受ける。
-    リクエスト JSON:
-      { "message": "...", "lang": "ja" もしくは "en" }
+    フロントエンドから受け取った JSON で共通の "message" キーを取り出し、
+    OpenAI ChatCompletion API に投げて返答テキストを取得。
+    さらに Google Text-to-Speech で MP3 を生成し、クライアントに返す JSON を組み立てる。
     """
     data = request.get_json()
-    user_text = data.get("message", "")
-    lang = data.get("lang", "ja")
+    user_message = data.get("message", "").strip()
 
-    # ── 1) OpenAI ChatCompletion の呼び出し ──
+    if not user_message:
+        return jsonify({"error": "Empty message"}), 400
+
+    # 1) OpenAI へ ChatCompletion をリクエスト
     try:
         completion = openai.ChatCompletion.create(
-            model="gpt-4o-mini",
+            model="gpt-3.5-turbo",
             messages=[
-                {"role": "system", "content": "You are a helpful assistant."},
-                {"role": "user", "content": user_text}
+                {"role": "system", "content": "あなたは親切なアシスタントです。"},
+                {"role": "user", "content": user_message}
             ]
         )
-        reply_text = completion.choices[0].message.content
+        ai_text = completion.choices[0].message.content.strip()
     except Exception as e:
-        # エラー時はブラウザ側にエラーメッセージを返す
-        return jsonify({"text": f"Error generating response: {e}", "audio_url": ""}), 500
+        return jsonify({"error": f"OpenAI request failed: {str(e)}"}), 500
 
-    # ── 2) Google TTS の呼び出し ──
+    # 2) Google TTS で音声ファイルを生成
     try:
-        tts_client = texttospeech.TextToSpeechClient()
-        synthesis_input = texttospeech.SynthesisInput(text=reply_text)
-
-        # 言語コードを lang パラメータで切り替え
-        if lang == "en":
-            voice = texttospeech.VoiceSelectionParams(
-                language_code="en-US",
-                ssml_gender=texttospeech.SsmlVoiceGender.NEUTRAL
-            )
-        else:
-            voice = texttospeech.VoiceSelectionParams(
-                language_code="ja-JP",
-                ssml_gender=texttospeech.SsmlVoiceGender.NEUTRAL
-            )
-
+        client = texttospeech.TextToSpeechClient()
+        synthesis_input = texttospeech.SynthesisInput(text=ai_text)
+        # 日本語の音声設定
+        voice = texttospeech.VoiceSelectionParams(
+            language_code="ja-JP",
+            ssml_gender=texttospeech.SsmlVoiceGender.NEUTRAL
+        )
         audio_config = texttospeech.AudioConfig(
             audio_encoding=texttospeech.AudioEncoding.MP3
         )
-        tts_response = tts_client.synthesize_speech(
+        response = client.synthesize_speech(
             input=synthesis_input,
             voice=voice,
             audio_config=audio_config
         )
+        # MP3 ファイル名をユニークに生成し、static/audio フォルダに保存
+        filename = f"tts_{uuid.uuid4().hex}.mp3"
+        audio_dir = os.path.join(app.static_folder, "audio")
+        os.makedirs(audio_dir, exist_ok=True)
+        file_path = os.path.join(audio_dir, filename)
+        with open(file_path, "wb") as out_file:
+            out_file.write(response.audio_content)
+        audio_url = f"/static/audio/{filename}"
     except Exception as e:
-        return jsonify({"text": f"Error generating TTS: {e}", "audio_url": ""}), 500
+        return jsonify({"error": f"TTS synthesis failed: {str(e)}"}), 500
 
-    # ── 3) static/audio/ に MP3 を保存 ──
-    audio_dir = os.path.join(app.static_folder, "audio")
-    os.makedirs(audio_dir, exist_ok=True)
-    filename = f"{uuid.uuid4().hex}.mp3"
-    audio_path = os.path.join(audio_dir, filename)
-    with open(audio_path, "wb") as f:
-        f.write(tts_response.audio_content)
-
-    # ── 4) JSON でテキストと音声 URL を返却 ──
+    # 3) クライアントに JSON で返却
     return jsonify({
-        "text": reply_text,
-        "audio_url": f"/static/audio/{filename}"
+        "text": ai_text,
+        "audio_url": audio_url
     })
 
 
-# ──────────────────────────────────────────
-#  5) エラーハンドリング (任意)
-# ──────────────────────────────────────────
-
-@app.errorhandler(404)
-def page_not_found(e):
-    """
-    404 エラーが発生したとき、テンプレート 404.html を返す例。
-    （ templates/ja/404.html / templates/en/404.html を用意しておくとよい）
-    """
-    # Accept-Language ヘッダで切り替え、もしくは URL 先頭 "/en" の有無で判断しても良い
-    return render_template("ja/404.html"), 404
+# ── 英語トップページ ──
+@app.route("/en", methods=["GET"])
+def index_en():
+    return render_template("en/index.html")
 
 
-@app.errorhandler(500)
-def internal_error(e):
-    """
-    500 エラーが発生したときに表示するテンプレート例。
-    """
-    return render_template("ja/500.html"), 500
+# ── 英語チャット画面 ──
+@app.route("/en/chatbot_en", methods=["GET"])
+def chatbot_en():
+    return render_template("en/chatbot.html")
 
 
-# ──────────────────────────────────────────
-#  6) アプリ起動設定
-# ──────────────────────────────────────────
+# ── 英語 About ページ ──
+@app.route("/en/about", methods=["GET"])
+def about_en():
+    return render_template("en/about.html")
+
+
+# ── 英語 Products ページ ──
+@app.route("/en/products", methods=["GET"])
+def products_en():
+    return render_template("en/products.html")
+
+
+# ── 英語 Services ページ ──
+@app.route("/en/services", methods=["GET"])
+def services_en():
+    return render_template("en/services.html")
+
+
+# ── 英語 Contact ページ ──
+@app.route("/en/contact", methods=["GET"])
+def contact_en():
+    return render_template("en/contact.html")
+
 
 if __name__ == "__main__":
-    # ローカルで開発するとき：
+    # Render が割り当てるポートを取得（デフォルトは 5000）
     port = int(os.getenv("PORT", 5000))
-    debug_mode = os.getenv("FLASK_DEBUG", "0") == "1"
-    app.run(host="0.0.0.0", port=port, debug=debug_mode)
+    app.run(host="0.0.0.0", port=port)
