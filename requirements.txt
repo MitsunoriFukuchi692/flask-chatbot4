@@ -2,7 +2,7 @@ openai>=0.27.0,<0.28.0
 
 httpx==0.23.3
 
-gunicorn
+gunicorn>=20.1.0
 
 Flask==2.3.3
 
