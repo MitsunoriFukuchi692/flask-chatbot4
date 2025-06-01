@@ -2,3 +2,4 @@
 .env.txt
 google-credentials.json
 *.json
+static/audio/*.mp3
