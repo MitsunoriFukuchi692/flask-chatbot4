@@ -1,56 +1,39 @@
 <!-- templates/base.html -->
 <!DOCTYPE html>
-<html lang="{{ lang | default('ja') }}">
+<html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
-  {# 各ページごとにタイトルを変えられるブロック #}
-  <title>{% block title %}Robo‐Study{% endblock %}</title>
-
-  {# 共通CSSをすべてのページで読み込む #}
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>{% block title %}Robo‐Study Chatbot{% endblock %}</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}" />
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
-
-  {# ページ固有の追加ヘッド要素があれば、子テンプレートで上書き可能 #}
-  {% block head_extra %}{% endblock %}
 </head>
 <body>
-  {# ─── 共通ヘッダー（ナビゲーション） ───────────────────────────── #}
+
   <header>
     <nav>
-      <ul>
-        {# 日本語サイト用リンク #}
+      <ul style="list-style: none; display: flex; gap: 12px; align-items: center;">
+        <!-- 日本語サイト側リンク -->
         <li><a href="{{ url_for('index_jp') }}">ホーム</a></li>
         <li><a href="{{ url_for('about_jp') }}">About（日本語）</a></li>
         <li><a href="{{ url_for('chatbot_jp') }}">チャット（日本語）</a></li>
-        {# もし /ja/products や /ja/services があれば、ここに追加 #}
 
-        {# → 空行や仕切りを入れたり、CSSでスタイルを調整してもよい #}
-        <li>｜</li>
+        <!-- 区切り線 -->
+        <li style="margin: 0 8px;">|</li>
 
-        {# 英語サイト用リンク #}
+        <!-- 英語サイト側リンク -->
         <li><a href="{{ url_for('index_en') }}">Home</a></li>
-        <li><a href="{{ url_for('about_en') }}">About (English)</a></li>
-        <li><a href="{{ url_for('chatbot_en') }}">Chat (English)</a></li>
-        {# もし /en/products や /en/services があれば、ここに追加 #}
+        <li><a href="{{ url_for('about_en') }}">About（English）</a></li>
+        <li><a href="{{ url_for('chatbot_en') }}">Chat（English）</a></li>
       </ul>
     </nav>
   </header>
 
-  {# ─── ここから各ページ固有コンテンツを挿入 ─────────────────── #}
   <main>
-    {% block content %}
-      <!-- 子テンプレートで上書きされる -->
-    {% endblock %}
+    {% block content %}{% endblock %}
   </main>
 
-  {# ─── 共通フッターなどがあればここに ────────────────────────── #}
-  <footer>
-    <p>&copy; 2025 Robo‐Study Inc.</p>
+  <footer style="margin-top: 32px; text-align: center;">
+    © 2025 Robo‐Study Inc.
   </footer>
-
-  {# ─── ページ固有のスクリプトを挿入できるブロック ──────────────── #}
-  {% block scripts %}{% endblock %}
 </body>
 </html>
