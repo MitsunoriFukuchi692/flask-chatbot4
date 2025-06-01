@@ -1,154 +1,143 @@
-import os
-import uuid
-from flask import Flask, render_template, request, jsonify
-import openai
-from google.cloud import texttospeech
+# app.py
 
-# OpenAI API キーを環境変数から取得
-openai.api_key = os.getenv("OPENAI_API_KEY")
+from flask import Flask, render_template, request, jsonify, url_for
 
-# Flask アプリの初期化
-app = Flask(
-    __name__,
-    static_folder="static",
-    template_folder="templates"
-)
+app = Flask(__name__)
 
-# ── 日本語トップページ ──
-@app.route("/", methods=["GET"])
-def index_ja():
+
+# ────────── 日本語サイトのルーティング ───────────────────
+
+@app.route("/")
+@app.route("/ja/")
+def index_jp():
+    """
+    日本語トップページ
+    URL:
+      - /
+      - /ja/
+    テンプレート: templates/ja/index.html
+    """
     return render_template("ja/index.html")
 
 
-# ── 日本語チャット画面 ──
-@app.route("/chatbot", methods=["GET"])
-def chatbot_ja():
+@app.route("/ja/chatbot")
+def chatbot_jp():
+    """
+    日本語チャットページ
+    URL: /ja/chatbot
+    テンプレート: templates/ja/chatbot.html
+    """
     return render_template("ja/chatbot.html")
 
 
-# ── 日本語 About ページ ──
-@app.route("/about", methods=["GET"])
-def about_ja():
-    return render_template("ja/about.html")
-
-
-# ── 日本語 Products ページ ──
-@app.route("/products", methods=["GET"])
-def products_ja():
-    return render_template("ja/products.html")
-
-
-# ── 日本語 Services ページ ──
-@app.route("/services", methods=["GET"])
-def services_ja():
-    return render_template("ja/services.html")
-
-
-# ── 日本語 Contact ページ ──
-@app.route("/contact", methods=["GET"])
-def contact_ja():
-    return render_template("ja/contact.html")
-
-
-# ── チャット用エンドポイント ──
-@app.route("/chat", methods=["POST"])
-def chat():
+@app.route("/api/ja/chat", methods=["POST"])
+def chat_api_jp():
     """
-    フロントエンドから受け取った JSON で共通の "message" キーを取り出し、
-    OpenAI ChatCompletion API に投げて返答テキストを取得。
-    さらに Google Text-to-Speech で MP3 を生成し、クライアントに返す JSON を組み立てる。
+    日本語用チャットAPI（AJAX から呼び出す想定）
+    URL: /api/ja/chat
+    リクエスト: JSON { "message": "<ユーザーが入力したテキスト>" }
+    レスポンス: JSON { "reply": "<ボットの返答テキスト>", "voice_url": "<音声ファイルのURL>" }
     """
     data = request.get_json()
-    user_message = data.get("message", "").strip()
+    user_msg = data.get("message", "")
 
-    if not user_message:
-        return jsonify({"error": "Empty message"}), 400
+    # ── 実際はここに ChatGPT 呼び出しなどのロジックを実装してください ──
+    # 例として、固定のダミー返答／ダミー音声URLを返しています。
+    bot_reply = generate_bot_reply_jp(user_msg)
+    voice_url = generate_tts_jp(bot_reply)  # 実際は Google TTS 等を呼び出して URL を生成
 
-    # 1) OpenAI へ ChatCompletion をリクエスト
-    try:
-        completion = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",
-            messages=[
-                {"role": "system", "content": "あなたは親切なアシスタントです。"},
-                {"role": "user", "content": user_message}
-            ]
-        )
-        ai_text = completion.choices[0].message.content.strip()
-    except Exception as e:
-        return jsonify({"error": f"OpenAI request failed: {str(e)}"}), 500
-
-    # 2) Google TTS で音声ファイルを生成
-    try:
-        client = texttospeech.TextToSpeechClient()
-        synthesis_input = texttospeech.SynthesisInput(text=ai_text)
-        # 日本語の音声設定
-        voice = texttospeech.VoiceSelectionParams(
-            language_code="ja-JP",
-            ssml_gender=texttospeech.SsmlVoiceGender.NEUTRAL
-        )
-        audio_config = texttospeech.AudioConfig(
-            audio_encoding=texttospeech.AudioEncoding.MP3
-        )
-        response = client.synthesize_speech(
-            input=synthesis_input,
-            voice=voice,
-            audio_config=audio_config
-        )
-        # MP3 ファイル名をユニークに生成し、static/audio フォルダに保存
-        filename = f"tts_{uuid.uuid4().hex}.mp3"
-        audio_dir = os.path.join(app.static_folder, "audio")
-        os.makedirs(audio_dir, exist_ok=True)
-        file_path = os.path.join(audio_dir, filename)
-        with open(file_path, "wb") as out_file:
-            out_file.write(response.audio_content)
-        audio_url = f"/static/audio/{filename}"
-    except Exception as e:
-        return jsonify({"error": f"TTS synthesis failed: {str(e)}"}), 500
-
-    # 3) クライアントに JSON で返却
     return jsonify({
-        "text": ai_text,
-        "audio_url": audio_url
+        "reply": bot_reply,
+        "voice_url": voice_url
     })
 
 
-# ── 英語トップページ ──
-@app.route("/en", methods=["GET"])
+def generate_bot_reply_jp(user_input: str) -> str:
+    """
+    日本語のボット返答を生成するサンプル関数。
+    実際には OpenAI ChatGPT API などを呼び出してください。
+    """
+    # ここでは単純に入力を受けて文字列を返す例
+    if not user_input:
+        return "何か入力してください。"
+    return f"（ダミー返答）あなたは「{user_input}」と入力しましたね。"
+
+
+def generate_tts_jp(text: str) -> str:
+    """
+    日本語テキストを音声化して URL を返すサンプル関数。
+    実際には Google Cloud Text-to-Speech などを呼び出し、
+    生成された MP3/OGG ファイルを static 配下に保存して URL を返してください。
+    """
+    # ダミーとして static/audio/jp_dummy.mp3 を返す例
+    return url_for("static", filename="audio/jp_dummy.mp3")
+
+
+# ────────── 英語サイトのルーティング ───────────────────
+
+@app.route("/en/")
 def index_en():
+    """
+    英語トップページ
+    URL: /en/
+    テンプレート: templates/en/index.html
+    """
     return render_template("en/index.html")
 
 
-# ── 英語チャット画面 ──
-@app.route("/en/chatbot_en", methods=["GET"])
+@app.route("/en/chatbot")
 def chatbot_en():
+    """
+    英語チャットページ
+    URL: /en/chatbot
+    テンプレート: templates/en/chatbot.html
+    """
     return render_template("en/chatbot.html")
 
 
-# ── 英語 About ページ ──
-@app.route("/en/about", methods=["GET"])
-def about_en():
-    return render_template("en/about.html")
+@app.route("/api/en/chat", methods=["POST"])
+def chat_api_en():
+    """
+    英語用チャットAPI（AJAX から呼び出す想定）
+    URL: /api/en/chat
+    リクエスト: JSON { "message": "<ユーザーが入力したテキスト>" }
+    レスポンス: JSON { "reply": "<ボットの返答テキスト>", "voice_url": "<音声ファイルのURL>" }
+    """
+    data = request.get_json()
+    user_msg = data.get("message", "")
+
+    # ── 実際は ChatGPT や Google TTS を呼び出して英語返答を生成する実装を入れてください ──
+    bot_reply = generate_bot_reply_en(user_msg)
+    voice_url = generate_tts_en(bot_reply)
+
+    return jsonify({
+        "reply": bot_reply,
+        "voice_url": voice_url
+    })
 
 
-# ── 英語 Products ページ ──
-@app.route("/en/products", methods=["GET"])
-def products_en():
-    return render_template("en/products.html")
+def generate_bot_reply_en(user_input: str) -> str:
+    """
+    英語のボット返答を生成するサンプル関数。
+    実際には OpenAI ChatGPT API などを呼び出してください。
+    """
+    if not user_input:
+        return "Please type something."
+    return f"(Dummy reply) You said: \"{user_input}\""
 
 
-# ── 英語 Services ページ ──
-@app.route("/en/services", methods=["GET"])
-def services_en():
-    return render_template("en/services.html")
+def generate_tts_en(text: str) -> str:
+    """
+    英語テキストを音声化して URL を返すサンプル関数。
+    実際には Google Cloud Text-to-Speech などを呼び出し、
+    生成された音声ファイルを static 配下に保存して URL を返してください。
+    """
+    # ダミーとして static/audio/en_dummy.mp3 を返す例
+    return url_for("static", filename="audio/en_dummy.mp3")
 
 
-# ── 英語 Contact ページ ──
-@app.route("/en/contact", methods=["GET"])
-def contact_en():
-    return render_template("en/contact.html")
-
+# ────────── メイン実行部 ───────────────────
 
 if __name__ == "__main__":
-    # Render が割り当てるポートを取得（デフォルトは 5000）
-    port = int(os.getenv("PORT", 5000))
-    app.run(host="0.0.0.0", port=port)
+    # デバッグモードで起動。公開サーバーに上げる際は debug=False に変更してください。
+    app.run(debug=True)
