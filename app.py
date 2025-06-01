@@ -72,6 +72,14 @@ def generate_tts_jp(text: str) -> str:
     # ダミーとして static/audio/jp_dummy.mp3 を返す例
     return url_for("static", filename="audio/jp_dummy.mp3")
 
+@app.route("/ja/about")
+def about_jp():
+    """
+    日本語 About ページ
+    URL: /ja/about
+    テンプレート: templates/ja/about.html
+    """
+    return render_template("ja/about.html")
 
 # ────────── 英語サイトのルーティング ───────────────────
 
@@ -134,6 +142,16 @@ def generate_tts_en(text: str) -> str:
     """
     # ダミーとして static/audio/en_dummy.mp3 を返す例
     return url_for("static", filename="audio/en_dummy.mp3")
+
+@app.route("/en/about")
+def about_en():
+    """
+    英語 About ページ
+    URL: /en/about
+    テンプレート: templates/en/about.html
+    """
+    return render_template("en/about.html")
+
 
 
 # ────────── メイン実行部 ───────────────────
