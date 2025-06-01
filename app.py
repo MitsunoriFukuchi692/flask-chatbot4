@@ -161,5 +161,5 @@ def generate_tts_en(text: str) -> str:
 # ────────── アプリケーション起動 ───────────────────
 
 if __name__ == "__main__":
-    # デバッグモードで起動。公開環境では debug=False にしてください
+    # デバッグモードで起動。公開環境では debug=False に変更してください
     app.run(debug=True)
