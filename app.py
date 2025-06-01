@@ -84,6 +84,7 @@ def about_jp():
 # ────────── 英語サイトのルーティング ───────────────────
 
 @app.route("/en/")
+@app.route("/en")
 def index_en():
     """
     英語トップページ
