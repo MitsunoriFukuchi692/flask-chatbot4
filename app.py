@@ -7,20 +7,18 @@ app = Flask(__name__)
 
 # ────────── 日本語サイトのルーティング ───────────────────
 
-# 「/」と「/ja/」の両方で日本語トップページを返す
 @app.route("/")
 @app.route("/ja/")
 @app.route("/ja")
 def index_jp():
     """
     日本語トップページ
-    URL: /      または /ja/  (末尾スラッシュの有無を両方カバー)
+    URL: /   または /ja/  または /ja
     テンプレート: templates/ja/index.html
     """
     return render_template("ja/index.html")
 
 
-# 日本語チャットページ
 @app.route("/ja/chatbot")
 @app.route("/ja/chatbot/")
 def chatbot_jp():
@@ -32,7 +30,6 @@ def chatbot_jp():
     return render_template("ja/chatbot.html")
 
 
-# 日本語Aboutページ
 @app.route("/ja/about")
 @app.route("/ja/about/")
 def about_jp():
@@ -44,7 +41,6 @@ def about_jp():
     return render_template("ja/about.html")
 
 
-# 日本語チャットAPI
 @app.route("/api/ja/chat", methods=["POST"])
 def chat_api_jp():
     """
@@ -56,7 +52,7 @@ def chat_api_jp():
     data = request.get_json()
     user_msg = data.get("message", "")
 
-    # ここに ChatGPT 呼び出しなどのロジックを入れてください
+    # ── ここに ChatGPT 呼び出しなどのロジックを実装してください ──
     bot_reply = generate_bot_reply_jp(user_msg)
     voice_url = generate_tts_jp(bot_reply)
 
@@ -68,7 +64,8 @@ def chat_api_jp():
 
 def generate_bot_reply_jp(user_input: str) -> str:
     """
-    日本語返答のダミー実装例。実際は OpenAI ChatGPT API を呼び出してください。
+    日本語返答のサンプル実装。
+    実運用では OpenAI ChatGPT API などを呼び出して返答テキストを生成してください。
     """
     if not user_input:
         return "何か入力してください。"
@@ -77,16 +74,16 @@ def generate_bot_reply_jp(user_input: str) -> str:
 
 def generate_tts_jp(text: str) -> str:
     """
-    日本語テキストを音声化し、その URL を返すダミー実装例。
-    実運用では Google TTS などを使い、生成ファイルを static/audio/ に保存し URL を返してください。
+    日本語テキストを音声化して URL を返すサンプル実装。
+    実運用では Google TTS などを呼び出し、生成した音声ファイルを static/audio/ に保存し、
+    その URL を返してください。
     """
-    # 例として static/audio/jp_dummy.mp3 が存在しているものとします
+    # 例として static/audio/jp_dummy.mp3 が存在している場合のダミーURL
     return url_for("static", filename="audio/jp_dummy.mp3")
 
 
 # ────────── 英語サイトのルーティング ───────────────────
 
-# 「/en/」と「/en」の両方で英語トップページを返す
 @app.route("/en/")
 @app.route("/en")
 def index_en():
@@ -98,7 +95,6 @@ def index_en():
     return render_template("en/index.html")
 
 
-# 英語チャットページ（末尾あり／なしを両対応）
 @app.route("/en/chatbot")
 @app.route("/en/chatbot/")
 def chatbot_en():
@@ -110,7 +106,6 @@ def chatbot_en():
     return render_template("en/chatbot.html")
 
 
-# 英語 About ページ（末尾あり／なしを両対応）
 @app.route("/en/about")
 @app.route("/en/about/")
 def about_en():
@@ -122,7 +117,6 @@ def about_en():
     return render_template("en/about.html")
 
 
-# 英語チャットAPI
 @app.route("/api/en/chat", methods=["POST"])
 def chat_api_en():
     """
@@ -134,7 +128,7 @@ def chat_api_en():
     data = request.get_json()
     user_msg = data.get("message", "")
 
-    # ここに ChatGPT 呼び出しなどのロジックを入れてください
+    # ── ここに ChatGPT 呼び出しなどのロジックを実装してください ──
     bot_reply = generate_bot_reply_en(user_msg)
     voice_url = generate_tts_en(bot_reply)
 
@@ -146,7 +140,8 @@ def chat_api_en():
 
 def generate_bot_reply_en(user_input: str) -> str:
     """
-    英語返答のダミー実装例。実際は OpenAI ChatGPT API を呼び出してください。
+    英語返答のサンプル実装。
+    実運用では OpenAI ChatGPT API などを呼び出して返答テキストを生成してください。
     """
     if not user_input:
         return "Please type something."
@@ -155,15 +150,16 @@ def generate_bot_reply_en(user_input: str) -> str:
 
 def generate_tts_en(text: str) -> str:
     """
-    英語テキストを音声化し、その URL を返すダミー実装例。
-    実運用では Google TTS などを使い、生成ファイルを static/audio/ に保存し URL を返してください。
+    英語テキストを音声化して URL を返すサンプル実装。
+    実運用では Google TTS などを呼び出し、生成した音声ファイルを static/audio/ に保存し、
+    その URL を返してください。
     """
-    # 例として static/audio/en_dummy.mp3 が存在しているものとします
+    # 例として static/audio/en_dummy.mp3 が存在している場合のダミーURL
     return url_for("static", filename="audio/en_dummy.mp3")
 
 
 # ────────── アプリケーション起動 ───────────────────
 
 if __name__ == "__main__":
-    # デバッグモードで起動。公開環境では debug=False に変更してください。
+    # デバッグモードで起動。公開環境では debug=False にしてください
     app.run(debug=True)

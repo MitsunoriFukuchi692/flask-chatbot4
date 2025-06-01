@@ -1,82 +1,84 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta 
-    name="viewport" 
-    content="width=device-width, initial-scale=1.0" 
-  />
-  <title>AI Mimakun Chatbot</title>
-  <!-- 同じスタイルシートを使う -->
-  <link
-    rel="stylesheet"
-    href="{{ url_for('static', filename='style.css') }}"
-  />
-</head>
-<body>
-  <h1>AI Mimakun Chatbot</h1>
+<!-- templates/en/chatbot.html -->
+{% extends "base.html" %}
 
-  <!-- チャット履歴 -->
-  <div id="chat-log"></div>
+{% block title %}Chat – AI Mimakun (English){% endblock %}
 
-  <!-- 入力フォーム -->
-  <form id="chat-form">
-    <input
-      id="user-input"
-      type="text"
-      placeholder="Enter up to 100 characters"
-      maxlength="100"
-      autocomplete="off"
-    />
-    <button type="submit">Send</button>
-  </form>
+{% block content %}
+  <div class="chat-container">
+    <h1>AI Mimakun Chatbot</h1>
 
-  <!-- オーディオプレーヤー -->
-  <audio
-    id="audio-player"
-    controls
-    style="display: none;"
-  ></audio>
+    <!-- メッセージ表示エリア -->
+    <div id="message-area"></div>
 
-  <!-- ここから JavaScript を必ず <script> タグで囲む -->
-  <script>
-    const chatForm    = document.getElementById("chat-form");
-    const userInput   = document.getElementById("user-input");
-    const chatLog     = document.getElementById("chat-log");
-    const audioPlayer = document.getElementById("audio-player");
+    <!-- 入力エリア -->
+    <div id="input-area" style="margin-top: 16px;">
+      <input
+        type="text"
+        id="user-input"
+        placeholder="Type your message..."
+        style="width: 80%; padding: 8px; border-radius: 4px; border: 1px solid #ccc;"
+      />
+      <button
+        id="send-button"
+        style="padding: 8px 12px; border:none; border-radius:4px; background:#007bff; color:#fff; cursor:pointer;"
+      >
+        Send
+      </button>
+    </div>
 
-    chatForm.addEventListener("submit", async e => {
-      e.preventDefault();
-      const text = userInput.value.trim();
-      if (!text) return;
-      userInput.value = "";
-      chatLog.innerHTML += `<div class="user">You: ${text}</div>`;
+    <!-- 音声再生用オーディオ要素 -->
+    <audio id="bot-voice" style="display:none;"></audio>
+  </div>
+{% endblock %}
 
-      try {
-        // エンドポイントは /chat にPOST
-        const res  = await fetch("/chat", {
-          method: "POST",
-          headers: {"Content-Type":"application/json"},
-          body: JSON.stringify({ message: text, lang: "en" })
-        });
-        const data = await res.json();
 
-        // 返ってきた JSON の text を表示
-        chatLog.innerHTML += `<div class="bot">Mima-kun: ${data.text}</div>`;
-        chatLog.scrollTop = chatLog.scrollHeight;
+{% block scripts %}
+<script>
+  const sendButton = document.getElementById('send-button');
+  const userInput   = document.getElementById('user-input');
+  const messageArea = document.getElementById('message-area');
+  const botVoice    = document.getElementById('bot-voice');
 
-        // 返ってきた audio_url を再生
-        audioPlayer.src = data.audio_url;
-        audioPlayer.style.display = "block";
-        await audioPlayer.play();
-      } catch(err) {
-        console.error(err);
-        chatLog.innerHTML += `<div class="bot">⚠️ An error occurred</div>`;
-        chatLog.scrollTop = chatLog.scrollHeight;
+  // 画面にメッセージを追加する関数
+  function appendMessage(text, isUser) {
+    const div = document.createElement('div');
+    div.classList.add(isUser ? 'user-message' : 'bot-message');
+    div.textContent = text;
+    messageArea.appendChild(div);
+    messageArea.scrollTop = messageArea.scrollHeight;
+  }
+
+  // サーバーにメッセージを送信する関数
+  async function sendMessage() {
+    const content = userInput.value.trim();
+    if (!content) return;
+    appendMessage(content, true);
+    userInput.value = '';
+
+    try {
+      // 英語用チャットAPI (app.py の chat_api_en に合わせる)
+      const response = await fetch('{{ url_for("chat_api_en") }}', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: content })
+      });
+      const data = await response.json();
+
+      appendMessage(data.reply, false);
+      if (data.voice_url) {
+        botVoice.src = data.voice_url;
+        botVoice.play();
       }
-    });
-  </script>
-  <!-- ここまで JavaScript -->
+    } catch (err) {
+      console.error('Chat error:', err);
+      appendMessage('⚠️ Communication error occurred.', false);
+    }
+  }
 
-</body>
-</html>
+  // イベントリスナー設定
+  sendButton.addEventListener('click', sendMessage);
+  userInput.addEventListener('keyup', e => {
+    if (e.key === 'Enter') sendMessage();
+  });
+</script>
+{% endblock %}
