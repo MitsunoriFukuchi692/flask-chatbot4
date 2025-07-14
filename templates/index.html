@@ -149,6 +149,18 @@ def create_invoice():
     # 支払いページへリダイレクト
     return redirect(invoice.hosted_invoice_url)
 
+<main>
+  …既存チャットUI…
+  <!-- 追加部分 -->
+  <section id="invoice-area" style="margin-top:40px; padding:20px; border:1px solid #ddd;">
+    <h2>インボイス発行デモ</h2>
+    <p>以下のボタンを押すとテストモードで請求を発行し、支払いページに飛びます。</p>
+    <form action="/create_invoice" method="post">
+      <button type="submit">インボイス発行</button>
+    </form>
+  </section>
+</main>
+
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=10000)
 ```
