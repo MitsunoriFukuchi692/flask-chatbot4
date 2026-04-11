@@ -34,3 +34,38 @@ chatForm.addEventListener("submit", async e => {
     chatLog.scrollTop = chatLog.scrollHeight;
   }
 });
+
+// 音声入力機能
+const micBtn = document.getElementById("mic-btn");
+
+if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  const recognition = new SpeechRecognition();
+  recognition.lang = "ja-JP";
+  recognition.interimResults = false;
+  recognition.maxAlternatives = 1;
+
+  micBtn.addEventListener("click", () => {
+    recognition.start();
+    micBtn.textContent = "🔴";  // 録音中は赤に変わる
+  });
+
+  recognition.onresult = (event) => {
+    const transcript = event.results[0][0].transcript;
+    userInput.value = transcript;
+    micBtn.textContent = "🎤";  // 元に戻す
+  };
+
+  recognition.onerror = (event) => {
+    console.error("音声認識エラー:", event.error);
+    micBtn.textContent = "🎤";
+  };
+
+  recognition.onend = () => {
+    micBtn.textContent = "🎤";
+  };
+
+} else {
+  // 音声認識非対応ブラウザの場合はボタンを隠す
+  micBtn.style.display = "none";
+}
