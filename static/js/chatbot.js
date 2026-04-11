@@ -10,7 +10,7 @@ chatForm.addEventListener("submit", async e => {
   userInput.value = "";
   chatLog.innerHTML += `<div class="user">You: ${text}</div>`;
   try {
-    const res  = await fetch("/chat", {
+    const res = await fetch("/chat", {
       method: "POST",
       headers: {"Content-Type":"application/json"},
       body: JSON.stringify({ message: text, lang: "ja" })
@@ -22,7 +22,11 @@ chatForm.addEventListener("submit", async e => {
 
     audioPlayer.src = data.audio_url;
     audioPlayer.style.display = "block";
-    await audioPlayer.play();
+    
+    // 自動再生を試み、ブロックされた場合はプレーヤーを表示して手動再生
+    audioPlayer.play().catch(() => {
+      console.log("自動再生がブロックされました。再生ボタンを押してください。");
+    });
 
   } catch(err) {
     console.error(err);
