@@ -9,9 +9,8 @@ chatForm.addEventListener("submit", async e => {
   if (!text) return;
   userInput.value = "";
   chatLog.innerHTML += `<div class="user">You: ${text}</div>`;
-
   try {
-    // エンドポイントを /chat に変更
+    // チャット返答を取得
     const res  = await fetch("/chat", {
       method: "POST",
       headers: {"Content-Type":"application/json"},
@@ -19,14 +18,22 @@ chatForm.addEventListener("submit", async e => {
     });
     const data = await res.json();
 
-    // レスポンス内の JSON キー名に合わせて表示
-    chatLog.innerHTML += `<div class="bot">Mima-kun: ${data.text}</div>`;
+    // キー名を "reply" に修正
+    chatLog.innerHTML += `<div class="bot">Mima-kun: ${data.reply}</div>`;
     chatLog.scrollTop = chatLog.scrollHeight;
 
-    // audio_url を直接使う
-    audioPlayer.src = data.audio_url;
+    // TTSに返答テキストを送って音声を取得
+    const ttsRes = await fetch("/tts", {
+      method: "POST",
+      headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({ text: data.reply, lang: "ja" })
+    });
+    const audioBlob = await ttsRes.blob();
+    const audioUrl = URL.createObjectURL(audioBlob);
+    audioPlayer.src = audioUrl;
     audioPlayer.style.display = "block";
     await audioPlayer.play();
+
   } catch(err) {
     console.error(err);
     chatLog.innerHTML += `<div class="bot">⚠️ エラーが発生しました</div>`;
