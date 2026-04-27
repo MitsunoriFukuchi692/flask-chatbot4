@@ -166,7 +166,16 @@ def chat():
         completion = openai.ChatCompletion.create(
             model="gpt-4o-mini",
             messages=[
-                {"role": "system", "content": "You are a helpful assistant."},
+                # 会社ごとのプロンプトを読み込む
+company = data.get("company", "robostudy")
+prompt_path = os.path.join(os.path.dirname(__file__), "prompts", f"{company}.txt")
+if os.path.exists(prompt_path):
+    with open(prompt_path, "r", encoding="utf-8") as f:
+        system_prompt = f.read()
+else:
+    system_prompt = "You are a helpful assistant."
+
+{"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_text}
             ]
         )
