@@ -13,8 +13,7 @@ chatForm.addEventListener("submit", async e => {
     const res = await fetch("/chat", {
       method: "POST",
       headers: {"Content-Type":"application/json"},
-      body: JSON.stringify({ message: text, lang: "ja" })
-    });
+     body: JSON.stringify({ message: text, lang: "ja", company: "robostudy" })
     const data = await res.json();
 
     chatLog.innerHTML += `<div class="bot">Mima-kun: ${data.text}</div>`;
