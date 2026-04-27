@@ -161,24 +161,27 @@ def chat():
     user_text = data.get("message", "")
     lang = data.get("lang", "ja")
 
-    # ── 1) OpenAI ChatCompletion の呼び出し ──
-    try:
-        completion = openai.ChatCompletion.create(
-            model="gpt-4o-mini",
-            messages=[
-                # 会社ごとのプロンプトを読み込む
-company = data.get("company", "robostudy")
-prompt_path = os.path.join(os.path.dirname(__file__), "prompts", f"{company}.txt")
-if os.path.exists(prompt_path):
-    with open(prompt_path, "r", encoding="utf-8") as f:
-        system_prompt = f.read()
-else:
-    system_prompt = "You are a helpful assistant."
+   # ── 1) OpenAI ChatCompletion の呼び出し ──
+        try:
+            # 会社ごとのプロンプトを読み込む
+            company = data.get("company", "robostudy")
+            prompt_path = os.path.join(os.path.dirname(__file__), "prompts", f"{company}.txt")
+            if os.path.exists(prompt_path):
+                with open(prompt_path, "r", encoding="utf-8") as f:
+                    system_prompt = f.read()
+            else:
+                system_prompt = "You are a helpful assistant."
 
-{"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_text}
-            ]
-        )
+            completion = openai.ChatCompletion.create(
+                model="gpt-4o-mini",
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_text}
+                ]
+            )
+            reply_text = completion.choices[0].message.content
+        except Exception as e:
+            return jsonify({"text": f"Error generating response: {e}", "audio_url": ""}), 500
         reply_text = completion.choices[0].message.content
     except Exception as e:
         # エラー時はブラウザ側にエラーメッセージを返す
